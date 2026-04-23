@@ -1,0 +1,65 @@
+# 🔹 Node dependencies
+node_modules/
+
+# 🔹 React Native / Metro
+.metro-health-check*
+*.bundle
+
+# 🔹 Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# 🔹 Environment files (important for Firebase, API keys, etc.)
+.env
+.env.*
+
+# 🔹 macOS
+.DS_Store
+
+# 🔹 IDE / Editors
+.vscode/
+.idea/
+*.iml
+
+# 🔹 TypeScript
+*.tsbuildinfo
+
+# 🔹 Android
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+
+# 🔹 iOS
+ios/build/
+ios/DerivedData/
+ios/*.xcworkspace
+ios/*.xcuserstate
+
+# CocoaPods (optional — see note below)
+ios/Pods/
+
+# 🔹 Fastlane (if you ever use it)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# 🔹 Testing
+coverage/
+
+# 🔹 Temporary files
+*.swp
+*.swo
+*.tmp
+
+# 🔹 Keystore / signing files (VERY important to ignore)
+*.keystore
+*.jks
+*.p12
+
+# 🔹 Firebase (optional depending on setup)
+google-services.json
+GoogleService-Info.plist
