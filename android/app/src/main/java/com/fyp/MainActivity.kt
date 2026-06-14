@@ -1,4 +1,4 @@
-package com.fyp
+package com.unifyvoice.android
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

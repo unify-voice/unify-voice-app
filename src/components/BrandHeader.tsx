@@ -1,23 +1,23 @@
-import React from 'react';
-import { Image, StyleSheet, Text, View, type ViewStyle, type StyleProp } from 'react-native';
-import { COLORS } from '../theme';
+import React from 'react'
+import { Image, StyleSheet, Text, View, type ViewStyle, type StyleProp } from 'react-native'
 
-const uvLogo = require('../assets/uv_logo.png');
+import uvLogo from '../assets/logo.png'
+import { COLORS } from '../theme1'
 
 type BrandHeaderProps = {
-  subtitle?: string;
-  style?: StyleProp<ViewStyle>;
-};
+  subtitle?: string
+  style?: StyleProp<ViewStyle>
+}
 
 const BrandHeader: React.FC<BrandHeaderProps> = ({ subtitle, style }) => (
   <View style={[styles.container, style]}>
     <View style={styles.row}>
-      <Image source={uvLogo} style={styles.logo} resizeMode="contain" />
+      <Image source={uvLogo} style={styles.logo} resizeMode='contain' />
       <Text style={styles.title}>Unify Voice</Text>
     </View>
     {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
   </View>
-);
+)
 
 const styles = StyleSheet.create({
   container: {
@@ -46,6 +46,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 20,
   },
-});
+})
 
-export default BrandHeader;
+export default BrandHeader

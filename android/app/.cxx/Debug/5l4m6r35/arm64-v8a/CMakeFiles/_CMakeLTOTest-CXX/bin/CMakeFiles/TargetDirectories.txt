@@ -1,4 +1,0 @@
-D:/Final_year_project/FYP/android/app/.cxx/Debug/5l4m6r35/arm64-v8a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/foo.dir
-D:/Final_year_project/FYP/android/app/.cxx/Debug/5l4m6r35/arm64-v8a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/boo.dir
-D:/Final_year_project/FYP/android/app/.cxx/Debug/5l4m6r35/arm64-v8a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/edit_cache.dir
-D:/Final_year_project/FYP/android/app/.cxx/Debug/5l4m6r35/arm64-v8a/CMakeFiles/_CMakeLTOTest-CXX/bin/CMakeFiles/rebuild_cache.dir
