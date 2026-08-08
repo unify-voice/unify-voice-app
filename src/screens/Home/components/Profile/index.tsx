@@ -32,6 +32,7 @@ import {
   isBiometricsEnabled,
   saveBiometricCredentials,
 } from '../../../../services/biometrics'
+import { clearUserHistory } from '../../../../services/history'
 import { useThemedStyles } from '../../../../theme'
 import { directionStyle } from '../../../../utils/rtl'
 import { RootStackParamList } from '../../../../types/navigation'
@@ -479,6 +480,8 @@ const ProfileScreen = ({ navigation }: Props) => {
     if (!current) return
     try {
       show()
+      const uid = current.uid
+      await clearUserHistory(uid)
       await current.delete()
       await clearBiometricCredentials()
       await signOutGoogle()
@@ -500,6 +503,8 @@ const ProfileScreen = ({ navigation }: Props) => {
     }
     const cred = EmailAuthProvider.credential(current.email, password)
     await current.reauthenticateWithCredential(cred)
+    const uid = current.uid
+    await clearUserHistory(uid)
     await current.delete()
     await clearBiometricCredentials()
     await signOutGoogle()

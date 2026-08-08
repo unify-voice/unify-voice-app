@@ -34,7 +34,7 @@ const HomeScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
   const { t, isRTL } = useLanguage()
-  const { displayName, refreshUser } = useAuthUser()
+  const { displayName, refreshUser, user } = useAuthUser()
   const { startTour, active, stepId } = useTour()
   const [weekCount, setWeekCount] = useState(0)
   const [weekDays, setWeekDays] = useState<WeekDayStat[]>(() => weekDayStats([]))
@@ -58,7 +58,7 @@ const HomeScreen = ({ navigation }: Props) => {
         tourAskedRef.current = true
         setTimeout(() => startTour(), 500)
       })
-    }, [refreshUser, startTour]),
+    }, [refreshUser, startTour, user?.uid]),
   )
 
   useEffect(() => {

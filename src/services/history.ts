@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import auth from '@react-native-firebase/auth'
 
 import { STORAGE_KEYS } from '../config/storageKeys'
 import type { AppLanguage } from '../i18n/translations'
@@ -17,9 +18,37 @@ export type HistoryItem = {
 
 const MAX_ITEMS = 50
 
+const currentUid = () => auth().currentUser?.uid ?? null
+
+async function migrateLegacyHistory(uid: string): Promise<void> {
+  try {
+    const key = STORAGE_KEYS.history(uid)
+    const [existing, legacy] = await Promise.all([
+      AsyncStorage.getItem(key),
+      AsyncStorage.getItem(STORAGE_KEYS.historyLegacy),
+    ])
+    if (!legacy) return
+    if (!existing) {
+      await AsyncStorage.setItem(key, legacy)
+    }
+    await AsyncStorage.removeItem(STORAGE_KEYS.historyLegacy)
+  } catch {
+    // keep per-user reads working even if migration fails
+  }
+}
+
+async function historyKey(): Promise<string | null> {
+  const uid = currentUid()
+  if (!uid) return null
+  await migrateLegacyHistory(uid)
+  return STORAGE_KEYS.history(uid)
+}
+
 export async function loadHistory(): Promise<HistoryItem[]> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEYS.history)
+    const key = await historyKey()
+    if (!key) return []
+    const raw = await AsyncStorage.getItem(key)
     if (!raw) return []
     const parsed = JSON.parse(raw) as HistoryItem[]
     return Array.isArray(parsed) ? parsed : []
@@ -34,14 +63,21 @@ export async function addHistoryItem(item: Omit<HistoryItem, 'id' | 'createdAt'>
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     createdAt: Date.now(),
   }
+  const key = await historyKey()
+  if (!key) return entry
   const current = await loadHistory()
   const next = [entry, ...current].slice(0, MAX_ITEMS)
-  await AsyncStorage.setItem(STORAGE_KEYS.history, JSON.stringify(next))
+  await AsyncStorage.setItem(key, JSON.stringify(next))
   return entry
 }
 
 export async function clearHistory(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEYS.history)
+  const uid = currentUid()
+  if (uid) await clearUserHistory(uid)
+}
+
+export async function clearUserHistory(uid: string): Promise<void> {
+  await AsyncStorage.removeItem(STORAGE_KEYS.history(uid))
 }
 
 export function historyTypeKey(type: ConversionType): string {

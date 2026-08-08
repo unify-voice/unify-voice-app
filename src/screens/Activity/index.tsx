@@ -6,6 +6,7 @@ import { Alert, Pressable, ScrollView, View } from 'react-native'
 import { Text } from 'tamagui'
 
 import ResultActions from '../../components/ResultActions'
+import { useAuthUser } from '../../context/AuthUser'
 import { useLanguage } from '../../context/Language'
 import { useThemedStyles } from '../../theme'
 import { clearHistory, historyTypeKey, loadHistory, type HistoryItem } from '../../services/history'
@@ -28,11 +29,12 @@ const formatWhen = (ts: number) => {
 const ActivityScreen = (_props: Props) => {
   const styles = useThemedStyles(createStyles)
   const { t, isRTL } = useLanguage()
+  const { user } = useAuthUser()
   const [items, setItems] = useState<HistoryItem[]>([])
 
   const refresh = useCallback(async () => {
     setItems(await loadHistory())
-  }, [])
+  }, [user?.uid])
 
   useFocusEffect(
     useCallback(() => {
