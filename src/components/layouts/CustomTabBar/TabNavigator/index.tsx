@@ -21,7 +21,6 @@ const TabNavigator = () => {
         screenOptions={({ navigation }) => ({
           headerShown: true,
           header: () => <Header onProfilePress={() => navigation.navigate('ProfileScreen')} />,
-          freezeOnBlur: true,
           sceneStyle: { backgroundColor: colors.background },
         })}
       >

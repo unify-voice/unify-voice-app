@@ -8,6 +8,7 @@ import { TamaguiProvider, Theme } from 'tamagui'
 
 import TabNavigator from './src/components/layouts/CustomTabBar/TabNavigator'
 import { configureGoogleSignIn } from './src/config/googleAuth'
+import { AuthUserProvider } from './src/context/AuthUser'
 import { LanguageProvider } from './src/context/Language'
 import { LoaderProvider } from './src/context/Loader'
 import { ThemeProvider, useAppTheme } from './src/context/Theme'
@@ -96,9 +97,11 @@ function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <LanguageProvider>
-            <LoaderProvider>
-              <AppNavigator />
-            </LoaderProvider>
+            <AuthUserProvider>
+              <LoaderProvider>
+                <AppNavigator />
+              </LoaderProvider>
+            </AuthUserProvider>
           </LanguageProvider>
         </ThemeProvider>
       </SafeAreaProvider>

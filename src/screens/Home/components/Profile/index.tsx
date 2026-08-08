@@ -1,4 +1,4 @@
-import { EmailAuthProvider, getAuth, updatePassword, updateProfile, verifyBeforeUpdateEmail } from '@react-native-firebase/auth'
+import auth, { EmailAuthProvider, getAuth, updatePassword, verifyBeforeUpdateEmail } from '@react-native-firebase/auth'
 import storage from '@react-native-firebase/storage'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { CommonActions, CompositeScreenProps } from '@react-navigation/native'
@@ -11,6 +11,7 @@ import { TextInput } from 'react-native-paper'
 import { Text, View, YStack } from 'tamagui'
 
 import { signInWithGoogle, signOutGoogle } from '../../../../config/googleAuth'
+import { useAuthUser } from '../../../../context/AuthUser'
 import { useLanguage } from '../../../../context/Language'
 import { useLoader } from '../../../../context/Loader'
 import { useAppTheme } from '../../../../context/Theme'
@@ -41,9 +42,9 @@ const ProfileScreen = ({ navigation }: Props) => {
   const { colors, inputTheme, isDark, toggleDark } = useAppTheme()
   const { language, setLanguage, t } = useLanguage()
   const { show, hide } = useLoader()
+  const { user, refreshUser } = useAuthUser()
 
   const authInstance = getAuth()
-  const user = authInstance.currentUser
 
   const [displayName, setDisplayName] = useState(user?.displayName || '')
   const [avatarUri, setAvatarUri] = useState<string | null>(user?.photoURL || null)
@@ -96,6 +97,11 @@ const ProfileScreen = ({ navigation }: Props) => {
     }
   }, [])
 
+  useEffect(() => {
+    setDisplayName(user?.displayName || '')
+    setAvatarUri(user?.photoURL || null)
+  }, [user?.displayName, user?.photoURL])
+
   const hasPasswordProvider = !!user?.providerData.some((p) => p.providerId === 'password')
 
   const initials =
@@ -145,7 +151,8 @@ const ProfileScreen = ({ navigation }: Props) => {
   }
 
   const handlePickAvatar = async () => {
-    if (!user) return
+    const current = auth().currentUser
+    if (!current) return
     try {
       const result = await ImagePicker.launchImageLibrary({
         mediaType: 'photo',
@@ -162,17 +169,22 @@ const ProfileScreen = ({ navigation }: Props) => {
         return
       }
 
-      setAvatarUri(uri)
       show()
       try {
-        const uploadPath = Platform.OS === 'ios' ? uri.replace('file://', '') : uri
-        const ref = storage().ref(`avatars/${user.uid}.jpg`)
-        await ref.putFile(uploadPath)
+        const ref = storage().ref(`avatars/${current.uid}.jpg`)
+        try {
+          await ref.putFile(uri)
+        } catch {
+          const fallbackPath = uri.startsWith('file://') ? uri.replace('file://', '') : uri
+          await ref.putFile(fallbackPath)
+        }
         const url = await ref.getDownloadURL()
-        await updateProfile(user, { photoURL: url })
-        setAvatarUri(url)
+        await current.updateProfile({ photoURL: url })
+        await refreshUser()
+        setAvatarUri(auth().currentUser?.photoURL || url)
       } catch {
         Alert.alert('Upload failed', 'Could not upload photo. Try again.')
+        setAvatarUri(auth().currentUser?.photoURL || null)
       } finally {
         hide()
       }
@@ -182,15 +194,17 @@ const ProfileScreen = ({ navigation }: Props) => {
   }
 
   const handleSaveName = async () => {
-    if (!user) return
+    const current = auth().currentUser
+    if (!current) return
     if (!newName.trim()) {
       setModalError('Name cannot be empty.')
       return
     }
     setIsLoading(true)
     try {
-      await updateProfile(user, { displayName: newName.trim() })
-      setDisplayName(newName.trim())
+      await current.updateProfile({ displayName: newName.trim() })
+      await refreshUser()
+      setDisplayName(auth().currentUser?.displayName?.trim() || newName.trim())
       closeModal()
     } catch (err: any) {
       setModalError(mapAuthError(err?.code, 'Failed to update name. Try again.'))
@@ -200,7 +214,8 @@ const ProfileScreen = ({ navigation }: Props) => {
   }
 
   const handleSaveEmail = async () => {
-    if (!user) return
+    const current = auth().currentUser
+    if (!current) return
     if (!hasPasswordProvider) {
       setModalError('Email cannot be changed for Google sign-in accounts this way.')
       return
@@ -217,15 +232,16 @@ const ProfileScreen = ({ navigation }: Props) => {
       setModalError('Current password is required.')
       return
     }
-    if (!user.email) {
+    if (!current.email) {
       setModalError('No email on this account.')
       return
     }
     setIsLoading(true)
     try {
-      const cred = EmailAuthProvider.credential(user.email, currentPassword)
-      await user.reauthenticateWithCredential(cred)
-      await verifyBeforeUpdateEmail(user, newEmail.trim())
+      const cred = EmailAuthProvider.credential(current.email, currentPassword)
+      await current.reauthenticateWithCredential(cred)
+      await verifyBeforeUpdateEmail(current, newEmail.trim())
+      await refreshUser()
       closeModal()
       Alert.alert('Verification sent', 'A verification link was sent to your new address. Confirm it to finish updating your email.')
     } catch (err: any) {
@@ -236,7 +252,8 @@ const ProfileScreen = ({ navigation }: Props) => {
   }
 
   const handleSavePassword = async () => {
-    if (!user) return
+    const current = auth().currentUser
+    if (!current) return
     if (!hasPasswordProvider) {
       setModalError('Password cannot be changed for Google sign-in accounts.')
       return
@@ -253,15 +270,16 @@ const ProfileScreen = ({ navigation }: Props) => {
       setModalError('Password must be at least 6 characters.')
       return
     }
-    if (!user.email) {
+    if (!current.email) {
       setModalError('No email on this account.')
       return
     }
     setIsLoading(true)
     try {
-      const cred = EmailAuthProvider.credential(user.email, currentPassword)
-      await user.reauthenticateWithCredential(cred)
-      await updatePassword(user, newPassword)
+      const cred = EmailAuthProvider.credential(current.email, currentPassword)
+      await current.reauthenticateWithCredential(cred)
+      await updatePassword(current, newPassword)
+      await refreshUser()
       closeModal()
       Alert.alert('Password updated', 'Your password has been changed successfully.')
     } catch (err: any) {

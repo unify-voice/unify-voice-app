@@ -1,7 +1,7 @@
-import { getAuth } from '@react-native-firebase/auth'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
 
+import { useAuthUser } from '../../../context/AuthUser'
 import { useAppTheme } from '../../../context/Theme'
 import { useThemedStyles } from '../../../theme'
 
@@ -14,26 +14,15 @@ type HeaderProps = {
 const Header = ({ onProfilePress }: HeaderProps) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
-  const [displayName, setDisplayName] = useState('User')
-  const [photoURL, setPhotoURL] = useState<string | null>(null)
+  const { displayName, photoURL } = useAuthUser()
 
-  useEffect(() => {
-    const authInstance = getAuth()
-    const sync = () => {
-      const user = authInstance.currentUser
-      setDisplayName(user?.displayName || 'User')
-      setPhotoURL(user?.photoURL || null)
-    }
-    sync()
-    return authInstance.onAuthStateChanged(sync)
-  }, [])
-
-  const initials = displayName
-    .split(' ')
-    .map((n: string) => n[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+  const initials =
+    displayName
+      .split(' ')
+      .map((n: string) => n[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase() || '?'
 
   return (
     <View

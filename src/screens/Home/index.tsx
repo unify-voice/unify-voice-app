@@ -1,12 +1,12 @@
-import { getAuth } from '@react-native-firebase/auth'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import { CompositeScreenProps } from '@react-navigation/native'
+import { CompositeScreenProps, useFocusEffect } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ArrowUpRight, ChevronRight } from '@tamagui/lucide-icons-2'
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import { Animated, Pressable, ScrollView } from 'react-native'
 import { Text, View, XStack, YStack } from 'tamagui'
 
+import { useAuthUser } from '../../context/AuthUser'
 import { useLanguage } from '../../context/Language'
 import { useAppTheme } from '../../context/Theme'
 import { useThemedStyles } from '../../theme'
@@ -22,12 +22,16 @@ const HomeScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
   const { t } = useLanguage()
-  const authInstance = getAuth()
-  const user = authInstance.currentUser
-  const displayName = user?.displayName || 'User'
+  const { displayName, refreshUser } = useAuthUser()
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(12)).current
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUser()
+    }, [refreshUser]),
+  )
 
   useEffect(() => {
     Animated.parallel([
