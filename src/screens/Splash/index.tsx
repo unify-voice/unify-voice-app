@@ -8,6 +8,7 @@ import uvLogo from '../../assets/logo.png'
 import { useLanguage } from '../../context/Language'
 import { useAppTheme } from '../../context/Theme'
 import { useThemedStyles } from '../../theme'
+import { directionStyle } from '../../utils/rtl'
 import { RootStackParamList } from '../../types/navigation'
 
 import { createStyles } from './styles.module'
@@ -20,7 +21,7 @@ const logoSize = Math.min(88, width * 0.2)
 const SplashScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
-  const { t } = useLanguage()
+  const { t, isRTL } = useLanguage()
   const fade = useRef(new Animated.Value(0)).current
   const translateY = useRef(new Animated.Value(16)).current
   const ringScale1 = useRef(new Animated.Value(0.94)).current
@@ -79,7 +80,7 @@ const SplashScreen = ({ navigation }: Props) => {
   }, [glowOpacity, fade, ringScale1, ringScale2, translateY, navigation])
 
   return (
-    <YStack flex={1} bg={colors.background} jc='center' ai='center'>
+    <YStack flex={1} bg={colors.background} jc='center' ai='center' style={directionStyle(isRTL)}>
       <Animated.View style={[styles.glowCore, { opacity: glowOpacity }]} />
 
       <Animated.View style={[styles.ring, styles.ring1, { transform: [{ scale: ringScale1 }] }]} />

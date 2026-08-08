@@ -2,8 +2,10 @@ import React from 'react'
 import { Image, Pressable, Text, View } from 'react-native'
 
 import { useAuthUser } from '../../../context/AuthUser'
+import { useLanguage } from '../../../context/Language'
 import { useAppTheme } from '../../../context/Theme'
 import { useThemedStyles } from '../../../theme'
+import { directionStyle } from '../../../utils/rtl'
 
 import { createStyles } from './styles.module'
 
@@ -15,6 +17,7 @@ const Header = ({ onProfilePress }: HeaderProps) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
   const { displayName, photoURL } = useAuthUser()
+  const { isRTL } = useLanguage()
 
   const initials =
     displayName
@@ -34,6 +37,7 @@ const Header = ({ onProfilePress }: HeaderProps) => {
         paddingTop: 8,
         paddingBottom: 8,
         backgroundColor: colors.background,
+        ...directionStyle(isRTL),
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>

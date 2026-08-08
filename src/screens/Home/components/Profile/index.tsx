@@ -31,6 +31,7 @@ import {
   saveBiometricCredentials,
 } from '../../../../services/biometrics'
 import { useThemedStyles } from '../../../../theme'
+import { directionStyle } from '../../../../utils/rtl'
 import { RootStackParamList } from '../../../../types/navigation'
 import { TabParamList } from '../../../../types/tabs'
 import { mapAuthError } from '../../../../utils/authErrors'
@@ -46,7 +47,7 @@ type ModalType = 'name' | 'email' | 'password' | 'language' | 'biometric' | null
 const ProfileScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors, inputTheme, isDark, toggleDark } = useAppTheme()
-  const { language, setLanguage, t } = useLanguage()
+  const { language, setLanguage, t, isRTL } = useLanguage()
   const { show, hide } = useLoader()
   const { user, photoURL, refreshUser, setLocalPhotoURL } = useAuthUser()
 
@@ -563,6 +564,7 @@ const ProfileScreen = ({ navigation }: Props) => {
       <View style={styles.ambientGlow} />
 
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+        <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps='handled'>
           <YStack ai='center' mb='$6'>
             <View style={styles.avatarWrap}>
@@ -653,6 +655,7 @@ const ProfileScreen = ({ navigation }: Props) => {
             />
           </View>
         </ScrollView>
+        </View>
       </Animated.View>
 
       <EditModal

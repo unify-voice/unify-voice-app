@@ -15,7 +15,7 @@ const TabNavigator = () => {
   const { colors } = useAppTheme()
 
   return (
-    <Screen padded={false}>
+    <Screen padded={false} applyDirection={false}>
       <Tab.Navigator
         tabBar={(props) => <CustomTabBar {...props} />}
         screenOptions={({ navigation }) => ({

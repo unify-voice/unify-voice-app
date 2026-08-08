@@ -5,13 +5,14 @@ import { Pressable, View, Text } from 'react-native'
 import { useLanguage } from '../../../context/Language'
 import { useAppTheme } from '../../../context/Theme'
 import { useThemedStyles } from '../../../theme'
+import { directionStyle } from '../../../utils/rtl'
 
 import { createStyles } from './styles.module'
 
 const CustomTabBar = ({ navigation }: { navigation: any }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
-  const { t } = useLanguage()
+  const { t, isRTL } = useLanguage()
   const currentRoute = navigation.getState().routes[navigation.getState().index].name
 
   const tabs = [
@@ -20,7 +21,7 @@ const CustomTabBar = ({ navigation }: { navigation: any }) => {
   ]
 
   return (
-    <View style={[styles.bottomNav]}>
+    <View style={[styles.bottomNav, directionStyle(isRTL)]}>
       {tabs.map((tab) => {
         const isActive = currentRoute === tab.name
         const Icon = tab.Icon

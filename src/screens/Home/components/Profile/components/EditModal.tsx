@@ -1,8 +1,10 @@
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable } from 'react-native'
 import { Text, XStack } from 'tamagui'
 
+import { useLanguage } from '../../../../../context/Language'
 import { useAppTheme } from '../../../../../context/Theme'
 import { useThemedStyles } from '../../../../../theme'
+import { directionStyle } from '../../../../../utils/rtl'
 import { createStyles } from '../styles.module'
 
 interface EditModalProps {
@@ -18,12 +20,13 @@ interface EditModalProps {
 const EditModal: React.FC<EditModalProps> = ({ visible, title, subtitle, onClose, onSave, isLoading, children }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
+  const { isRTL } = useLanguage()
 
   return (
     <Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', alignItems: 'center' }}>
-          <Pressable style={styles.modalCard} onPress={() => {}}>
+          <Pressable style={[styles.modalCard, directionStyle(isRTL)]} onPress={() => {}}>
             <Text style={styles.modalTitle}>{title}</Text>
             <Text style={styles.modalSub}>{subtitle}</Text>
             {children}

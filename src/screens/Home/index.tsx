@@ -10,6 +10,7 @@ import { useAuthUser } from '../../context/AuthUser'
 import { useLanguage } from '../../context/Language'
 import { useAppTheme } from '../../context/Theme'
 import { useThemedStyles } from '../../theme'
+import { directionStyle } from '../../utils/rtl'
 import { RootStackParamList } from '../../types/navigation'
 import { TabParamList } from '../../types/tabs'
 
@@ -21,7 +22,7 @@ type Props = CompositeScreenProps<BottomTabScreenProps<TabParamList, 'HomeScreen
 const HomeScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
-  const { t } = useLanguage()
+  const { t, isRTL } = useLanguage()
   const { displayName, refreshUser } = useAuthUser()
 
   const fadeAnim = useRef(new Animated.Value(0)).current
@@ -52,6 +53,7 @@ const HomeScreen = ({ navigation }: Props) => {
       <View style={styles.ambientGlow} />
 
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+        <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
         <YStack px='$5' mt='$3'>
           <Text style={styles.greetingLabel}>{getGreeting()}</Text>
           <Text style={styles.welcomeName}>{displayName}</Text>
@@ -121,11 +123,14 @@ const HomeScreen = ({ navigation }: Props) => {
                   <Text style={styles.featureTitle}>{t(f.titleKey)}</Text>
                   <Text style={styles.featureSub}>{t(f.subtitleKey)}</Text>
                 </YStack>
-                <ChevronRight size={20} color={colors.textDisabled} />
+                <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+                  <ChevronRight size={20} color={colors.textDisabled} />
+                </View>
               </Pressable>
             )
           })}
         </ScrollView>
+        </View>
       </Animated.View>
     </>
   )

@@ -3,6 +3,7 @@ import React from 'react'
 import { Pressable } from 'react-native'
 import { Text, View, YStack } from 'tamagui'
 
+import { useLanguage } from '../../../../../context/Language'
 import { useAppTheme } from '../../../../../context/Theme'
 import { useThemedStyles } from '../../../../../theme'
 import { createStyles } from '../styles.module'
@@ -20,6 +21,7 @@ interface RowProps {
 const SettingRow: React.FC<RowProps> = ({ icon, title, subtitle, danger, badge, onPress, noBorder }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
+  const { isRTL } = useLanguage()
 
   return (
     <Pressable
@@ -38,7 +40,7 @@ const SettingRow: React.FC<RowProps> = ({ icon, title, subtitle, danger, badge, 
         </View>
       ) : null}
       {onPress ? (
-        <View style={badge ? { marginLeft: 4 } : undefined}>
+        <View style={[badge ? { marginStart: 4 } : undefined, isRTL && { transform: [{ scaleX: -1 }] }]}>
           <ChevronRight size={18} color={danger ? colors.errorBorder : colors.textDisabled} />
         </View>
       ) : null}

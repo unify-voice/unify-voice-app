@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { I18nManager } from 'react-native'
 
 import { AppLanguage, translate } from '../i18n/translations'
 
@@ -27,11 +26,6 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
         const stored = await AsyncStorage.getItem(STORAGE_KEY)
         if (mounted && (stored === 'en' || stored === 'ur')) {
           setLanguageState(stored)
-          const rtl = stored === 'ur'
-          if (I18nManager.isRTL !== rtl) {
-            I18nManager.allowRTL(rtl)
-            I18nManager.forceRTL(rtl)
-          }
         }
       } catch {
         // keep English
@@ -47,12 +41,6 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
   const setLanguage = useCallback(async (lang: AppLanguage) => {
     setLanguageState(lang)
     await AsyncStorage.setItem(STORAGE_KEY, lang)
-    const rtl = lang === 'ur'
-    if (I18nManager.isRTL !== rtl) {
-      I18nManager.allowRTL(rtl)
-      I18nManager.forceRTL(rtl)
-      // Direction changes fully apply after reload; strings update immediately.
-    }
   }, [])
 
   const t = useCallback((key: string) => translate(language, key), [language])

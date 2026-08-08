@@ -2,14 +2,14 @@ import 'react-native-gesture-handler'
 import { NavigationContainer, Theme as NavigationTheme, DarkTheme, DefaultTheme } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import React, { useEffect, useMemo } from 'react'
-import { StatusBar, View } from 'react-native'
+import { I18nManager, StatusBar, View } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { TamaguiProvider, Theme } from 'tamagui'
 
 import TabNavigator from './src/components/layouts/CustomTabBar/TabNavigator'
 import { configureGoogleSignIn } from './src/config/googleAuth'
 import { AuthUserProvider } from './src/context/AuthUser'
-import { LanguageProvider } from './src/context/Language'
+import { LanguageProvider, useLanguage } from './src/context/Language'
 import { LoaderProvider } from './src/context/Loader'
 import { ThemeProvider, useAppTheme } from './src/context/Theme'
 import ForgotPasswordScreen from './src/screens/Auth/ForgotPassword'
@@ -24,6 +24,10 @@ import { darkColors } from './src/theme/colors'
 import type { RootStackParamList } from './src/types/navigation'
 import config from './tamagui.config'
 
+// Keep native layout LTR. RTL is applied in JS so tab screens do not collapse.
+I18nManager.allowRTL(false)
+I18nManager.forceRTL(false)
+
 const Stack = createNativeStackNavigator<RootStackParamList>()
 
 const navFonts = {
@@ -35,6 +39,7 @@ const navFonts = {
 
 function AppNavigator() {
   const { colors, isDark, isReady } = useAppTheme()
+  const { isRTL } = useLanguage()
 
   useEffect(() => {
     configureGoogleSignIn()
@@ -70,7 +75,7 @@ function AppNavigator() {
           initialRouteName='Splash'
           screenOptions={{
             headerShown: false,
-            animation: 'slide_from_right',
+            animation: isRTL ? 'slide_from_left' : 'slide_from_right',
             gestureEnabled: true,
             contentStyle: { backgroundColor: colors.background },
             freezeOnBlur: true,
