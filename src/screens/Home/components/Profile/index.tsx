@@ -15,6 +15,7 @@ import { useLanguage } from '../../../../context/Language'
 import { useLoader } from '../../../../context/Loader'
 import { usePreferences } from '../../../../context/Preferences'
 import { useAppTheme } from '../../../../context/Theme'
+import { TourTarget, useTour } from '../../../../context/Tour'
 import {
   ensurePhotoLibraryPermission,
   mapStorageError,
@@ -47,6 +48,8 @@ type ModalType = 'name' | 'email' | 'password' | 'language' | 'conversion' | 'bi
 
 const ProfileScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
+  const { startTour, active, stepId } = useTour()
+  const profileScrollRef = useRef<ScrollView>(null)
   const { colors, inputTheme, isDark, toggleDark } = useAppTheme()
   const { language, setLanguage, t, isRTL } = useLanguage()
   const { conversionLang, setConversionLang } = usePreferences()
@@ -91,6 +94,12 @@ const ProfileScreen = ({ navigation }: Props) => {
       Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
     ]).start()
   }, [fadeAnim, slideAnim])
+
+  useEffect(() => {
+    if (!active || stepId !== 'conversionLang') return
+    const t = setTimeout(() => profileScrollRef.current?.scrollTo({ y: 260, animated: true }), 220)
+    return () => clearTimeout(t)
+  }, [active, stepId])
 
   useEffect(() => {
     let mounted = true
@@ -581,7 +590,7 @@ const ProfileScreen = ({ navigation }: Props) => {
 
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps='handled'>
+        <ScrollView ref={profileScrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps='handled'>
           <YStack ai='center' mb='$6'>
             <View style={styles.avatarWrap}>
               {avatarUri ? (
@@ -627,12 +636,14 @@ const ProfileScreen = ({ navigation }: Props) => {
               subtitle={language === 'ur' ? t('lang.urdu') : t('lang.english')}
               onPress={() => openModal('language')}
             />
-            <SettingRow
-              icon={<AudioLines size={17} color={colors.primary} />}
-              title={t('conv.title')}
-              subtitle={conversionLang === 'ur' ? t('lang.urdu') : t('lang.english')}
-              onPress={() => openModal('conversion')}
-            />
+            <TourTarget id='conversionLang'>
+              <SettingRow
+                icon={<AudioLines size={17} color={colors.primary} />}
+                title={t('conv.title')}
+                subtitle={conversionLang === 'ur' ? t('lang.urdu') : t('lang.english')}
+                onPress={() => openModal('conversion')}
+              />
+            </TourTarget>
             <SettingRow
               icon={isDark ? <Moon size={17} color={colors.primary} /> : <Sun size={17} color={colors.primary} />}
               title={t('profile.darkMode')}
@@ -659,7 +670,7 @@ const ProfileScreen = ({ navigation }: Props) => {
               icon={<BookOpen size={17} color={colors.primary} />}
               title={t('profile.tutorial')}
               subtitle={t('profile.tutorialSub')}
-              onPress={() => navigation.navigate('AppTutorial', { replay: true })}
+              onPress={() => startTour()}
             />
             <SettingRow icon={<Info size={17} color={colors.primary} />} title={t('profile.version')} subtitle='v1.0.0 (build 42)' noBorder />
           </View>

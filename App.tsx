@@ -9,16 +9,17 @@ import { TamaguiProvider, Theme } from 'tamagui'
 import TabNavigator from './src/components/layouts/CustomTabBar/TabNavigator'
 import { configureGoogleSignIn } from './src/config/googleAuth'
 import OfflineBanner from './src/components/OfflineBanner'
+import TourOverlay from './src/components/TourOverlay'
 import { AuthUserProvider } from './src/context/AuthUser'
 import { LanguageProvider, useLanguage } from './src/context/Language'
 import { LoaderProvider } from './src/context/Loader'
 import { NetworkProvider } from './src/context/Network'
 import { PreferencesProvider } from './src/context/Preferences'
 import { ThemeProvider, useAppTheme } from './src/context/Theme'
+import { TourProvider } from './src/context/Tour'
 import ForgotPasswordScreen from './src/screens/Auth/ForgotPassword'
 import LoginScreen from './src/screens/Auth/Login'
 import SignupScreen from './src/screens/Auth/Signup'
-import AppTutorialScreen from './src/screens/AppTutorial'
 import OnboardingScreen from './src/screens/Onboarding'
 import SignToTextScreen from './src/screens/SignToText'
 import SpeechToSignScreen from './src/screens/SpeechToSign'
@@ -92,7 +93,6 @@ function AppNavigator() {
             <Stack.Screen name='Login' component={LoginScreen} />
             <Stack.Screen name='ForgotPasswordScreen' component={ForgotPasswordScreen} />
             <Stack.Screen name='SignupScreen' component={SignupScreen} />
-            <Stack.Screen name='AppTutorial' component={AppTutorialScreen} options={{ animation: 'fade', gestureEnabled: false }} />
             <Stack.Screen name='MainTabs' component={TabNavigator} options={{ animation: 'fade', gestureEnabled: false }} />
             <Stack.Screen name='SignToTextScreen' component={SignToTextScreen} />
             <Stack.Screen name='SpeechToTextScreen' component={SpeechToTextScreen} />
@@ -113,9 +113,12 @@ function App() {
             <PreferencesProvider>
               <NetworkProvider>
                 <AuthUserProvider>
-                  <LoaderProvider>
-                    <AppNavigator />
-                  </LoaderProvider>
+                  <TourProvider>
+                    <LoaderProvider>
+                      <AppNavigator />
+                      <TourOverlay />
+                    </LoaderProvider>
+                  </TourProvider>
                 </AuthUserProvider>
               </NetworkProvider>
             </PreferencesProvider>

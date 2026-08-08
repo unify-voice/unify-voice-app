@@ -14,7 +14,6 @@ export type RootStackParamList = {
   CameraScreen: undefined
   SpeechToSignScreen: undefined
   SpeechToTextScreen: undefined
-  AppTutorial: { replay?: boolean } | undefined
   ProfileScreen: undefined
   MainTabs: NavigatorScreenParams<TabParamList>
 }
