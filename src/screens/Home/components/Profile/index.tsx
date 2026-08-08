@@ -1,14 +1,15 @@
 import auth, { EmailAuthProvider, getAuth, updatePassword, verifyBeforeUpdateEmail } from '@react-native-firebase/auth'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import { CommonActions, CompositeScreenProps } from '@react-navigation/native'
+import { CommonActions, CompositeScreenProps, useFocusEffect } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { AudioLines, BookOpen, Eye, EyeOff, Fingerprint, HelpCircle, Info, Languages, Lock, LogOut, Mail, Moon, Pencil, ScanFace, Shield, Sun, Trash2, User, Vibrate, Volume2 } from '@tamagui/lucide-icons-2'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Alert, Animated, Image, Platform, Pressable, ScrollView } from 'react-native'
 import * as ImagePicker from 'react-native-image-picker'
 import { TextInput } from 'react-native-paper'
 import { Text, View, YStack } from 'tamagui'
 
+import Atmosphere from '../../../../components/Atmosphere'
 import { signInWithGoogle, signOutGoogle } from '../../../../config/googleAuth'
 import { useAuthUser } from '../../../../context/AuthUser'
 import { useLanguage } from '../../../../context/Language'
@@ -32,7 +33,7 @@ import {
   isBiometricsEnabled,
   saveBiometricCredentials,
 } from '../../../../services/biometrics'
-import { clearUserHistory } from '../../../../services/history'
+import { clearUserHistory, countHistoryThisWeek, loadHistory } from '../../../../services/history'
 import { useThemedStyles } from '../../../../theme'
 import { directionStyle } from '../../../../utils/rtl'
 import { RootStackParamList } from '../../../../types/navigation'
@@ -51,7 +52,7 @@ const ProfileScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { startTour, active, stepId } = useTour()
   const profileScrollRef = useRef<ScrollView>(null)
-  const { colors, inputTheme, isDark, toggleDark } = useAppTheme()
+  const { colors, inputTheme, isDark, setMode } = useAppTheme()
   const { language, setLanguage, t, isRTL } = useLanguage()
   const { conversionLang, setConversionLang, hapticsEnabled, setHapticsEnabled, soundCuesEnabled, setSoundCuesEnabled } = usePreferences()
   const { show, hide } = useLoader()
@@ -85,6 +86,8 @@ const ProfileScreen = ({ navigation }: Props) => {
   const [biometryLabel, setBiometryLabel] = useState('Biometrics')
   const [biometryKind, setBiometryKind] = useState<'face' | 'fingerprint' | 'iris' | 'none'>('none')
   const [biometricsOn, setBiometricsOn] = useState(false)
+  const [weekCount, setWeekCount] = useState(0)
+  const [allCount, setAllCount] = useState(0)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(12)).current
@@ -96,10 +99,19 @@ const ProfileScreen = ({ navigation }: Props) => {
     ]).start()
   }, [fadeAnim, slideAnim])
 
+  useFocusEffect(
+    useCallback(() => {
+      void loadHistory().then((items) => {
+        setWeekCount(countHistoryThisWeek(items))
+        setAllCount(items.length)
+      })
+    }, []),
+  )
+
   useEffect(() => {
     if (!active || stepId !== 'conversionLang') return
-    const t = setTimeout(() => profileScrollRef.current?.scrollTo({ y: 260, animated: true }), 220)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => profileScrollRef.current?.scrollTo({ y: 380, animated: true }), 220)
+    return () => clearTimeout(timer)
   }, [active, stepId])
 
   useEffect(() => {
@@ -591,12 +603,12 @@ const ProfileScreen = ({ navigation }: Props) => {
 
   return (
     <>
-      <View style={styles.ambientGlow} />
-
+      <View style={styles.root}>
+      <Atmosphere />
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
         <ScrollView ref={profileScrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps='handled'>
-          <YStack ai='center' mb='$6'>
+          <YStack ai='center' style={styles.identity}>
             <View style={styles.avatarWrap}>
               {avatarUri ? (
                 <View style={[styles.avatarCircle, { overflow: 'hidden' }]}>
@@ -607,16 +619,41 @@ const ProfileScreen = ({ navigation }: Props) => {
                   <Text style={styles.avatarInitials}>{initials}</Text>
                 </View>
               )}
-              <Pressable style={styles.avatarEditBtn} onPress={handlePickAvatar}>
-                <Pencil size={12} color={colors.textOnPrimary} />
+              <Pressable style={styles.avatarEditBtn} onPress={handlePickAvatar} hitSlop={8}>
+                <Pencil size={15} color={colors.textOnPrimary} />
               </Pressable>
             </View>
             <Text style={styles.avatarName}>{displayName || 'User'}</Text>
             <Text style={styles.avatarEmail}>{user.email}</Text>
+            <View style={styles.chipRow}>
+              <View style={styles.chip}>
+                <Text style={styles.chipText}>
+                  {hasPasswordProvider ? t('profile.signedInEmail') : t('profile.signedInGoogle')}
+                </Text>
+              </View>
+              <View style={styles.chip}>
+                <Text style={styles.chipText}>{conversionLang === 'ur' ? t('lang.urdu') : t('lang.english')}</Text>
+              </View>
+            </View>
+            <Pressable
+              onPress={() => navigation.navigate('ActivityScreen')}
+              style={({ pressed }) => [styles.statStrip, pressed && { opacity: 0.75 }]}
+              accessibilityRole='button'
+              accessibilityLabel={t('home.weekCount').replace('{count}', String(weekCount))}
+            >
+              <View style={styles.statCell}>
+                <Text style={styles.statNum}>{weekCount}</Text>
+                <Text style={styles.statLabel}>{t('profile.thisWeek')}</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statCell}>
+                <Text style={styles.statNum}>{allCount}</Text>
+                <Text style={styles.statLabel}>{t('profile.allTime')}</Text>
+              </View>
+            </Pressable>
           </YStack>
 
           <Text style={styles.sectionLabel}>{t('profile.account')}</Text>
-          <View style={styles.groupCard}>
             <SettingRow
               icon={<User size={17} color={colors.primary} />}
               title={t('profile.fullName')}
@@ -631,10 +668,30 @@ const ProfileScreen = ({ navigation }: Props) => {
               onPress={handlePasswordPress}
               noBorder
             />
-          </View>
-
+          <Text style={styles.sectionLabel}>{t('profile.appearance')}</Text>
+            <View style={styles.themeSwitch}>
+              <Pressable
+                onPress={() => setMode('light')}
+                style={[styles.themePill, !isDark && styles.themePillOn]}
+                accessibilityRole='button'
+                accessibilityState={{ selected: !isDark }}
+                accessibilityLabel={t('profile.themeLight')}
+              >
+                <Sun size={16} color={!isDark ? colors.textOnPrimary : colors.textSecondary} />
+                <Text style={[styles.themePillText, !isDark && { color: colors.textOnPrimary }]}>{t('profile.themeLight')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setMode('dark')}
+                style={[styles.themePill, isDark && styles.themePillOn]}
+                accessibilityRole='button'
+                accessibilityState={{ selected: isDark }}
+                accessibilityLabel={t('profile.themeDark')}
+              >
+                <Moon size={16} color={isDark ? colors.textOnPrimary : colors.textSecondary} />
+                <Text style={[styles.themePillText, isDark && { color: colors.textOnPrimary }]}>{t('profile.themeDark')}</Text>
+              </Pressable>
+            </View>
           <Text style={styles.sectionLabel}>{t('profile.preferences')}</Text>
-          <View style={styles.groupCard}>
             <SettingRow
               icon={<Languages size={17} color={colors.primary} />}
               title={t('profile.language')}
@@ -649,13 +706,6 @@ const ProfileScreen = ({ navigation }: Props) => {
                 onPress={() => openModal('conversion')}
               />
             </TourTarget>
-            <SettingRow
-              icon={isDark ? <Moon size={17} color={colors.primary} /> : <Sun size={17} color={colors.primary} />}
-              title={t('profile.darkMode')}
-              subtitle={isDark ? t('profile.on') : t('profile.off')}
-              badge={isDark ? t('profile.on') : t('profile.off')}
-              onPress={toggleDark}
-            />
             <SettingRow
               icon={<Vibrate size={17} color={colors.primary} />}
               title={t('profile.haptics')}
@@ -681,10 +731,7 @@ const ProfileScreen = ({ navigation }: Props) => {
                 noBorder
               />
             ) : null}
-          </View>
-
           <Text style={styles.sectionLabel}>{t('profile.about')}</Text>
-          <View style={styles.groupCard}>
             <SettingRow
               icon={<BookOpen size={17} color={colors.primary} />}
               title={t('profile.tutorial')}
@@ -704,10 +751,7 @@ const ProfileScreen = ({ navigation }: Props) => {
               onPress={() => navigation.navigate('PrivacyScreen')}
             />
             <SettingRow icon={<Info size={17} color={colors.primary} />} title={t('profile.version')} subtitle='v1.0.0 (build 42)' noBorder />
-          </View>
-
           <Text style={styles.sectionLabel}>{t('profile.actions')}</Text>
-          <View style={styles.groupCard}>
             <SettingRow
               icon={<LogOut size={17} color={colors.errorText} />}
               title={t('profile.logOut')}
@@ -723,10 +767,10 @@ const ProfileScreen = ({ navigation }: Props) => {
               onPress={handleDeleteAccount}
               noBorder
             />
-          </View>
         </ScrollView>
         </View>
       </Animated.View>
+      </View>
 
       <EditModal
         visible={activeModal === 'name'}

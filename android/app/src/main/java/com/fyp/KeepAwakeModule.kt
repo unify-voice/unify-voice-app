@@ -10,7 +10,7 @@ class KeepAwakeModule(reactContext: ReactApplicationContext) : ReactContextBaseJ
 
   @ReactMethod
   fun setEnabled(enabled: Boolean) {
-    val activity = currentActivity ?: return
+    val activity = reactApplicationContext.currentActivity ?: return
     activity.runOnUiThread {
       val window = activity.window ?: return@runOnUiThread
       if (enabled) {

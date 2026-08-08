@@ -144,10 +144,14 @@ export const TourTarget = ({ id, children, style }: TargetProps) => {
 
   const measure = useCallback(() => {
     if (!tour?.active) return
-    ref.current?.measureInWindow((x, y, width, height) => {
-      if (width < 2 || height < 2) return
-      tour.registerTarget(id, { x, y, width, height })
-    })
+    const run = () => {
+      ref.current?.measureInWindow((x, y, width, height) => {
+        if (width < 2 || height < 2) return
+        tour.registerTarget(id, { x, y, width, height })
+      })
+    }
+    run()
+    requestAnimationFrame(run)
   }, [id, tour])
 
   useEffect(() => {

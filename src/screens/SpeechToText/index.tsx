@@ -4,6 +4,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Alert, Animated, Pressable, ScrollView, View } from 'react-native'
 import { Text, XStack, YStack } from 'tamagui'
 
+import Atmosphere from '../../components/Atmosphere'
+import ClayControl from '../../components/ClayControl'
+import GlassButton from '../../components/GlassButton'
 import ResultActions from '../../components/ResultActions'
 import Screen from '../../components/layouts/Screen'
 import { useLanguage } from '../../context/Language'
@@ -38,7 +41,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const pulseAnim = useRef(new Animated.Value(1)).current
-  const waveAnims = useRef([0.3, 0.6, 0.4, 0.8, 0.5].map((v) => new Animated.Value(v))).current
+  const waveAnims = useRef([0.28, 0.5, 0.38, 0.82, 0.46, 0.7, 0.34, 0.62, 0.42].map((v) => new Animated.Value(v))).current
   const mountedRef = useRef(true)
 
   useEffect(() => {
@@ -72,7 +75,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
 
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulseAnim, { toValue: 1.12, duration: 800, useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1.06, duration: 900, useNativeDriver: true }),
         Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
       ]),
     )
@@ -187,7 +190,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <Screen padded={false}>
       <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
-        <View style={styles.ambientGlow} />
+        <Atmosphere />
 
         <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
           <YStack px='$5' pt='$3' pb='$2'>
@@ -199,8 +202,8 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
           </YStack>
 
-          <View style={styles.micCard}>
-            <XStack ai='center' jc='center' gap='$1' style={{ height: 48, marginBottom: 20 }}>
+          <View style={styles.stage}>
+            <View style={styles.waveRow}>
               {waveAnims.map((anim, i) => (
                 <Animated.View
                   key={i}
@@ -213,34 +216,36 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
                   ]}
                 />
               ))}
-            </XStack>
+            </View>
 
             <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-              <Pressable
-                onPress={() => void toggleListening()}
+              <ClayControl
+                size={88}
+                active={phase === 'listening'}
                 disabled={phase === 'processing'}
-                accessibilityRole='button'
+                onPress={() => void toggleListening()}
                 accessibilityLabel={statusLabel}
-                accessibilityState={{ busy: phase === 'processing', disabled: phase === 'processing' }}
-                style={[styles.micBtn, phase === 'listening' && styles.micBtnActive, phase === 'processing' && { opacity: 0.4 }]}
               >
-                {phase === 'listening' ? <View style={styles.micBtnRing} /> : null}
-                {phase === 'listening' ? <CircleStop size={28} color={colors.primary} /> : <Mic size={28} color={colors.primary} />}
-              </Pressable>
+                {phase === 'listening' ? (
+                  <CircleStop size={30} color={colors.textOnPrimary} />
+                ) : (
+                  <Mic size={30} color={colors.primary} />
+                )}
+              </ClayControl>
             </Animated.View>
 
             <Text style={[styles.micLabel, (phase === 'listening' || phase === 'processing') && { color: colors.primary }]}>{statusLabel}</Text>
           </View>
 
           {phase === 'error' || phase === 'denied' || phase === 'empty' ? (
-            <View style={styles.errorCard}>
+            <View style={styles.errorBlock}>
               <Text style={styles.errorTitle}>{phase === 'empty' ? t('stt.noText') : t('common.retry')}</Text>
               <Text style={styles.errorBody}>{errorMessage}</Text>
             </View>
           ) : null}
 
           <View style={styles.transcriptSection}>
-            <XStack ai='center' jc='space-between' mb='$2'>
+            <XStack ai='center' jc='space-between' mb='$3'>
               <Text style={styles.transcriptLabel}>{t('stt.transcript')}</Text>
               <XStack ai='center' gap='$2'>
                 <ResultActions text={transcript.join('\n')} />
@@ -252,36 +257,31 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
               </XStack>
             </XStack>
 
-            <ScrollView style={styles.transcriptScroll} contentContainerStyle={{ padding: 14, flexGrow: 1 }}>
+            <ScrollView style={styles.transcriptScroll} contentContainerStyle={{ paddingBottom: 8, flexGrow: 1 }} showsVerticalScrollIndicator={false}>
               {transcript.length === 0 ? (
                 <Text style={styles.transcriptEmpty}>{t('stt.empty')}</Text>
               ) : (
                 transcript.map((line, i) => (
-                  <View key={`${line}-${i}`} style={styles.transcriptLine}>
-                    <View style={styles.transcriptDot} />
-                    <Text style={styles.transcriptText} selectable maxFontSizeMultiplier={1.4}>
-                      {line}
-                    </Text>
-                  </View>
+                  <Text key={`${line}-${i}`} style={styles.transcriptText} selectable maxFontSizeMultiplier={1.4}>
+                    {line}
+                  </Text>
                 ))
               )}
             </ScrollView>
           </View>
 
-          <View style={{ paddingHorizontal: 20, paddingBottom: 32, paddingTop: 12 }}>
+          <View style={styles.footer}>
             {phase === 'error' || phase === 'empty' ? (
-              <Pressable onPress={() => void retry()} style={styles.secondaryBtn}>
-                <Text style={styles.secondaryBtnText}>{t('common.retry')}</Text>
+              <Pressable onPress={() => void retry()} style={styles.textAction}>
+                <Text style={styles.textActionLabel}>{t('common.retry')}</Text>
               </Pressable>
             ) : null}
             {phase === 'success' ? (
-              <Pressable onPress={() => void startRecording()} style={styles.secondaryBtn}>
-                <Text style={styles.secondaryBtnText}>{t('stt.another')}</Text>
+              <Pressable onPress={() => void startRecording()} style={styles.textAction}>
+                <Text style={styles.textActionLabel}>{t('stt.another')}</Text>
               </Pressable>
             ) : null}
-            <Pressable onPress={() => navigation.goBack()} style={styles.primaryBtn}>
-              <Text style={styles.primaryBtnText}>{t('stt.returnHome')}</Text>
-            </Pressable>
+            <GlassButton label={t('stt.returnHome')} onPress={() => navigation.goBack()} />
           </View>
         </Animated.View>
       </View>

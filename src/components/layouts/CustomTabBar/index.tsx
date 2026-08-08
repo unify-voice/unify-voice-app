@@ -7,6 +7,7 @@ import { useAppTheme } from '../../../context/Theme'
 import { TourTarget, useOptionalTour } from '../../../context/Tour'
 import { useThemedStyles } from '../../../theme'
 import type { TourStepId, TourTab } from '../../../tour/steps'
+import GlassSurface from '../../GlassSurface'
 
 import { createStyles } from './styles.module'
 
@@ -34,40 +35,43 @@ const CustomTabBar = ({ navigation }: { navigation: any }) => {
 
   return (
     <View style={styles.bottomNav}>
-      {tabs.map((tab) => {
-        const isActive = currentRoute === tab.name
-        const Icon = tab.Icon
-        const color = isActive ? colors.primary : colors.textSecondary
-        const tourId = TAB_TOUR_ID[tab.name]
-        const item = (
-          <Pressable
-            onPress={() => navigation.navigate(tab.name)}
-            style={styles.navItem}
-            hitSlop={6}
-            accessibilityRole='tab'
-            accessibilityLabel={t(tab.labelKey)}
-            accessibilityState={{ selected: isActive }}
-          >
-            <Icon size={20} color={color} opacity={isActive ? 1 : 0.45} />
-            <Text
-              style={[styles.navLabel, isActive && { color: colors.primary, opacity: 1 }]}
-              numberOfLines={1}
-              maxFontSizeMultiplier={1.2}
-            >
-              {t(tab.labelKey)}
-            </Text>
-            <View style={styles.dotContainer}>{isActive ? <View style={styles.navDot} /> : null}</View>
-          </Pressable>
-        )
+      <View style={styles.dockShadow}>
+        <GlassSurface style={styles.dock} contentStyle={styles.dockInner}>
+          {tabs.map((tab) => {
+            const isActive = currentRoute === tab.name
+            const Icon = tab.Icon
+            const color = isActive ? colors.primary : colors.textSecondary
+            const tourId = TAB_TOUR_ID[tab.name]
+            const item = (
+              <Pressable
+                onPress={() => navigation.navigate(tab.name)}
+                style={[styles.navItem, isActive && styles.navItemOn]}
+                hitSlop={6}
+                accessibilityRole='tab'
+                accessibilityLabel={t(tab.labelKey)}
+                accessibilityState={{ selected: isActive }}
+              >
+                <Icon size={20} color={color} opacity={isActive ? 1 : 0.5} />
+                <Text
+                  style={[styles.navLabel, isActive && { color: colors.primary, opacity: 1 }]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t(tab.labelKey)}
+                </Text>
+              </Pressable>
+            )
 
-        return tourId ? (
-          <TourTarget key={tab.name} id={tourId} style={{ flex: 1 }}>
-            {item}
-          </TourTarget>
-        ) : (
-          <React.Fragment key={tab.name}>{item}</React.Fragment>
-        )
-      })}
+            return tourId ? (
+              <TourTarget key={tab.name} id={tourId} style={{ flex: 1 }}>
+                {item}
+              </TourTarget>
+            ) : (
+              <React.Fragment key={tab.name}>{item}</React.Fragment>
+            )
+          })}
+        </GlassSurface>
+      </View>
     </View>
   )
 }

@@ -27,7 +27,7 @@ const SettingRow: React.FC<RowProps> = ({ icon, title, subtitle, danger, badge, 
     <Pressable
       onPress={onPress}
       disabled={!onPress}
-      style={({ pressed }) => [styles.row, !noBorder && styles.rowBorder, pressed && onPress && { backgroundColor: colors.card }]}
+      style={({ pressed }) => [styles.row, !noBorder && styles.rowBorder, pressed && onPress && { opacity: 0.65 }]}
     >
       <View style={[styles.rowIcon, danger && styles.rowIconDanger]}>{icon}</View>
       <YStack flex={1}>
@@ -40,8 +40,8 @@ const SettingRow: React.FC<RowProps> = ({ icon, title, subtitle, danger, badge, 
         </View>
       ) : null}
       {onPress ? (
-        <View style={[badge ? { marginStart: 4 } : undefined, isRTL && { transform: [{ scaleX: -1 }] }]}>
-          <ChevronRight size={18} color={danger ? colors.errorBorder : colors.textDisabled} />
+        <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+          <ChevronRight size={18} color={danger ? colors.errorText : colors.textDisabled} />
         </View>
       ) : null}
     </Pressable>

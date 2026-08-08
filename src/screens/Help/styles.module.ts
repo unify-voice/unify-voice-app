@@ -19,10 +19,11 @@ const createStyles = (c: ThemeColors) =>
       fontWeight: '700',
     },
     title: {
-      fontSize: 22,
-      fontWeight: '900',
+      fontSize: 28,
+      fontWeight: '800',
       color: c.textPrimary,
       marginTop: 4,
+      letterSpacing: -0.5,
     },
     sub: {
       fontSize: 13,
@@ -36,12 +37,9 @@ const createStyles = (c: ThemeColors) =>
       paddingTop: 8,
     },
     card: {
-      backgroundColor: c.card,
-      borderWidth: 1,
-      borderColor: c.cardBorder,
-      borderRadius: 16,
-      padding: 14,
-      marginBottom: 10,
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.divider,
     },
     qRow: {
       flexDirection: 'row',

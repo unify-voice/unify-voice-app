@@ -3,9 +3,12 @@ import { CircleStop, Mic, Pause, Play } from '@tamagui/lucide-icons-2'
 import React, { useEffect, useRef, useState } from 'react'
 import { Alert, Animated, Image, Pressable, ScrollView, View } from 'react-native'
 import Video, { type VideoRef } from 'react-native-video'
-import { Text, XStack, YStack } from 'tamagui'
+import { Text, YStack } from 'tamagui'
 
 import defaultAvatar from '../../assets/speech-to-sign-avatar.png'
+import Atmosphere from '../../components/Atmosphere'
+import ClayControl from '../../components/ClayControl'
+import GlassButton from '../../components/GlassButton'
 import ResultActions from '../../components/ResultActions'
 import Screen from '../../components/layouts/Screen'
 import { SUPPORTED_SIGNS } from '../../constants/supportedSigns'
@@ -75,7 +78,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
     if (phase === 'listening') {
       const loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.1, duration: 700, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.06, duration: 900, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
         ]),
       )
@@ -227,7 +230,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <Screen padded={false}>
       <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
-        <View style={styles.ambientGlow} />
+        <Atmosphere />
 
         <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
           <YStack px='$5' pt='$3' pb='$2'>
@@ -239,8 +242,8 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
           </YStack>
 
-          <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 12 }} keyboardShouldPersistTaps='handled'>
-            <View style={styles.heroWrap}>
+          <ScrollView contentContainerStyle={{ paddingBottom: 16 }} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
+            <View style={styles.stage}>
               {videoUrl ? (
                 <Video
                   ref={videoRef}
@@ -259,10 +262,27 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
               ) : (
                 <Image source={defaultAvatar} style={{ flex: 1, width: '100%', height: '100%' }} resizeMode='contain' />
               )}
+              {spokenText ? (
+                <View style={styles.caption}>
+                  <Text style={styles.captionKicker}>{t('sts.spoken')}</Text>
+                  <Text style={styles.captionText} numberOfLines={2} selectable>
+                    {spokenText}
+                  </Text>
+                </View>
+              ) : null}
             </View>
 
+            {spokenText ? (
+              <View style={styles.spokenActions}>
+                <ResultActions text={spokenText} />
+                <Pressable onPress={resetResult} accessibilityRole='button' hitSlop={8}>
+                  <Text style={styles.clearBtn}>{t('common.clear')}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
             {phase === 'unsupported' || phase === 'error' || phase === 'denied' ? (
-              <View style={styles.errorCard}>
+              <View style={styles.errorBlock}>
                 <Text style={styles.errorTitle}>
                   {phase === 'unsupported' ? t('sts.unsupported') : phase === 'denied' ? t('sts.permission') : t('common.retry')}
                 </Text>
@@ -270,29 +290,12 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
               </View>
             ) : null}
 
-            {spokenText ? (
-              <View style={styles.spokenCard}>
-                <XStack ai='center' jc='space-between'>
-                  <Text style={styles.spokenLabel}>{t('sts.spoken')}</Text>
-                  <XStack ai='center' gap='$2'>
-                    <ResultActions text={spokenText} />
-                    <Pressable onPress={resetResult} accessibilityRole='button' hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
-                      <Text style={styles.clearBtn}>{t('common.clear')}</Text>
-                    </Pressable>
-                  </XStack>
-                </XStack>
-                <Text style={[styles.spokenText, { marginTop: 10 }]} selectable maxFontSizeMultiplier={1.4}>
-                  {spokenText}
-                </Text>
-              </View>
-            ) : null}
-
             {showSigns ? (
-              <View style={styles.spokenCard}>
-                <Text style={styles.spokenLabel}>{t('sts.supported')}</Text>
+              <View style={styles.signsBlock}>
+                <Text style={styles.signsKicker}>{t('sts.supported')}</Text>
                 <Text style={styles.sectionHint}>{t('sts.supportedHint')}</Text>
                 {practiceSign ? (
-                  <View style={styles.practiceCard}>
+                  <View style={styles.practiceBlock}>
                     <Text style={styles.practiceLabel}>{t('sts.practice')}</Text>
                     <Text style={styles.practiceEn} maxFontSizeMultiplier={1.4}>
                       {practiceSign.en}
@@ -301,64 +304,51 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                       {practiceSign.ur}
                     </Text>
                     <Text style={styles.sectionHint}>{t('sts.practiceSay')}</Text>
-                    <Text style={styles.practiceNote}>{t('sts.practiceNote')}</Text>
                   </View>
                 ) : null}
-                <View style={styles.signsGrid}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.signRail}>
                   {SUPPORTED_SIGNS.map((sign) => {
                     const selected = practiceId === sign.id
                     return (
                       <Pressable
                         key={sign.id}
                         onPress={() => setPracticeId(selected ? null : sign.id)}
-                        style={[styles.signChip, selected && styles.signChipSelected]}
+                        style={[styles.signPill, selected && styles.signPillOn]}
                         accessibilityRole='button'
                         accessibilityState={{ selected }}
                         accessibilityLabel={`${sign.en}. ${sign.ur}`}
-                        hitSlop={4}
                       >
-                        <Text style={[styles.signChipText, selected && { color: colors.primary }]}>{language === 'ur' ? sign.ur : sign.en}</Text>
+                        <Text style={[styles.signPillText, selected && { color: colors.primary }]}>{language === 'ur' ? sign.ur : sign.en}</Text>
                       </Pressable>
                     )
                   })}
-                </View>
+                </ScrollView>
               </View>
             ) : null}
 
-            <View style={styles.micCard}>
-              <XStack ai='center' jc='center' gap='$4'>
-                <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                  <Pressable
-                    onPress={() => void toggleMic()}
-                    disabled={micDisabled}
-                    accessibilityRole='button'
-                    accessibilityLabel={statusLabel}
-                    accessibilityState={{ busy: micDisabled, disabled: micDisabled }}
-                    style={[styles.micBtn, phase === 'listening' && styles.micBtnActive, micDisabled && { opacity: 0.35 }]}
-                  >
-                    {phase === 'listening' ? <CircleStop size={28} color={colors.primary} /> : <Mic size={28} color={colors.primary} />}
-                  </Pressable>
-                </Animated.View>
-
-                {videoUrl ? (
-                  <Pressable
-                    onPress={handlePlayPause}
-                    disabled={!videoReady}
-                    style={[
-                      styles.micBtn,
-                      { backgroundColor: isPaused ? colors.accentBlueDark : colors.playGreen, borderColor: isPaused ? colors.accentBlue : colors.primary },
-                    ]}
-                  >
-                    {isPaused ? <Play size={28} color={colors.white} /> : <Pause size={28} color={colors.white} />}
-                  </Pressable>
-                ) : null}
-              </XStack>
-              <Text style={[styles.micLabel, (phase === 'listening' || phase === 'processing') && { color: colors.primary }]}>{statusLabel}</Text>
+            <View style={styles.controls}>
+              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                <ClayControl
+                  size={84}
+                  active={phase === 'listening'}
+                  disabled={micDisabled}
+                  onPress={() => void toggleMic()}
+                  accessibilityLabel={statusLabel}
+                >
+                  {phase === 'listening' ? <CircleStop size={28} color={colors.textOnPrimary} /> : <Mic size={28} color={colors.primary} />}
+                </ClayControl>
+              </Animated.View>
+              {videoUrl ? (
+                <ClayControl size={64} onPress={handlePlayPause} disabled={!videoReady} accessibilityLabel={isPaused ? t('sts.replay') : t('sts.playing')}>
+                  {isPaused ? <Play size={24} color={colors.primary} /> : <Pause size={24} color={colors.primary} />}
+                </ClayControl>
+              ) : null}
             </View>
+            <Text style={[styles.micLabel, (phase === 'listening' || phase === 'processing') && { color: colors.primary }]}>{statusLabel}</Text>
 
             {phase === 'error' || phase === 'unsupported' ? (
-              <Pressable onPress={() => void retry()} style={styles.secondaryBtn}>
-                <Text style={styles.secondaryBtnText}>{t('common.retry')}</Text>
+              <Pressable onPress={() => void retry()} style={styles.textAction}>
+                <Text style={styles.textActionLabel}>{t('common.retry')}</Text>
               </Pressable>
             ) : null}
 
@@ -368,17 +358,15 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                   resetResult()
                   setPhase('idle')
                 }}
-                style={styles.secondaryBtn}
+                style={styles.textAction}
               >
-                <Text style={styles.secondaryBtnText}>{t('sts.newConversion')}</Text>
+                <Text style={styles.textActionLabel}>{t('sts.newConversion')}</Text>
               </Pressable>
             ) : null}
           </ScrollView>
 
-          <View style={{ padding: 20 }}>
-            <Pressable onPress={() => navigation.goBack()} style={styles.primaryBtn}>
-              <Text style={styles.primaryBtnText}>{t('sts.returnHome')}</Text>
-            </Pressable>
+          <View style={{ paddingBottom: 20, paddingTop: 4 }}>
+            <GlassButton label={t('sts.returnHome')} onPress={() => navigation.goBack()} />
           </View>
         </Animated.View>
       </View>

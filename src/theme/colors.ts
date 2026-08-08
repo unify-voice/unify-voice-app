@@ -66,6 +66,14 @@ export type ThemeColors = {
   warning: string
   successBright: string
   recordIdle: string
+
+  glass: string
+  glassStrong: string
+  glassBorder: string
+  glassHighlight: string
+  clay: string
+  clayDeep: string
+  navGlass: string
 }
 
 /** Existing dark palette — values preserved exactly where they already existed. */
@@ -73,7 +81,7 @@ export const darkColors: ThemeColors = {
   primary: '#22c55e',
   primaryDark: '#16A34A',
 
-  background: '#0d0d0d',
+  background: '#0c0f0d',
   surface: '#111827',
   surfaceElevated: '#161616',
   navBackground: 'rgba(13,13,13,0.96)',
@@ -133,6 +141,14 @@ export const darkColors: ThemeColors = {
   warning: '#facc15',
   successBright: '#4ade80',
   recordIdle: 'rgba(255,255,255,0.3)',
+
+  glass: 'rgba(255,255,255,0.06)',
+  glassStrong: 'rgba(18,26,20,0.72)',
+  glassBorder: 'rgba(255,255,255,0.12)',
+  glassHighlight: 'rgba(255,255,255,0.2)',
+  clay: '#1b231e',
+  clayDeep: '#101612',
+  navGlass: 'rgba(16,22,18,0.82)',
 }
 
 /**
@@ -143,7 +159,7 @@ export const lightColors: ThemeColors = {
   primary: '#22c55e',
   primaryDark: '#16A34A',
 
-  background: '#F8FAF7',
+  background: '#EEF3EE',
   surface: '#FFFFFF',
   surfaceElevated: '#FFFFFF',
   navBackground: 'rgba(248,250,247,0.96)',
@@ -203,6 +219,14 @@ export const lightColors: ThemeColors = {
   warning: '#CA8A04',
   successBright: '#16A34A',
   recordIdle: 'rgba(17,24,39,0.25)',
+
+  glass: 'rgba(255,255,255,0.52)',
+  glassStrong: 'rgba(255,255,255,0.86)',
+  glassBorder: 'rgba(255,255,255,0.88)',
+  glassHighlight: 'rgba(255,255,255,1)',
+  clay: '#E6EEE7',
+  clayDeep: '#cfd8d1',
+  navGlass: 'rgba(255,255,255,0.8)',
 }
 
 /** @deprecated Prefer useAppTheme().colors — kept for gradual migration / static defaults */

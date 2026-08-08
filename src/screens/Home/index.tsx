@@ -2,11 +2,11 @@ import auth from '@react-native-firebase/auth'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { CompositeScreenProps, useFocusEffect } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { ChevronRight } from '@tamagui/lucide-icons-2'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { Animated, Pressable, ScrollView } from 'react-native'
-import { Text, View, YStack } from 'tamagui'
+import { Animated, Pressable, ScrollView, View } from 'react-native'
+import { Text, YStack } from 'tamagui'
 
+import Atmosphere from '../../components/Atmosphere'
 import { useAuthUser } from '../../context/AuthUser'
 import { useLanguage } from '../../context/Language'
 import { useAppTheme } from '../../context/Theme'
@@ -40,7 +40,6 @@ const HomeScreen = ({ navigation }: Props) => {
   const [weekDays, setWeekDays] = useState<WeekDayStat[]>(() => weekDayStats([]))
 
   const fadeAnim = useRef(new Animated.Value(0)).current
-  const slideAnim = useRef(new Animated.Value(12)).current
   const scrollRef = useRef<ScrollView>(null)
   const tourAskedRef = useRef(false)
 
@@ -70,11 +69,8 @@ const HomeScreen = ({ navigation }: Props) => {
   }, [active, stepId])
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
-    ]).start()
-  }, [fadeAnim, slideAnim])
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start()
+  }, [fadeAnim])
 
   const getGreeting = () => {
     const h = new Date().getHours()
@@ -84,63 +80,58 @@ const HomeScreen = ({ navigation }: Props) => {
   }
 
   return (
-    <>
-      <View style={styles.ambientGlow} />
-
-      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+    <View style={styles.root}>
+      <Atmosphere />
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
         <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
           <TourTarget id='welcome'>
-            <YStack px='$5' mt='$3'>
+            <View style={styles.hero}>
               <Text style={styles.greetingLabel} maxFontSizeMultiplier={1.3}>
                 {getGreeting()}
               </Text>
-              <Text style={styles.welcomeName} maxFontSizeMultiplier={1.4}>
+              <Text style={styles.welcomeName} maxFontSizeMultiplier={1.35}>
                 {displayName}
               </Text>
               <Text style={styles.welcomeSub} maxFontSizeMultiplier={1.35}>
                 {t('home.welcomeSub')}
               </Text>
-            </YStack>
+            </View>
           </TourTarget>
 
           <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <WeekChart days={weekDays} total={weekCount} onPress={() => navigation.navigate('ActivityScreen')} />
 
-            <View style={styles.hintCard}>
-              <Text style={styles.hintText}>{t('home.signsHint')}</Text>
-            </View>
+            <Text style={styles.hintLine}>{t('home.signsHint')}</Text>
 
             <Text style={styles.sectionLabel}>{t('home.features')}</Text>
 
-            {FEATURES.map((f) => {
+            {FEATURES.map((f, index) => {
               const Icon = f.Icon
               const tourId = FEATURE_TOUR_ID[f.key as keyof typeof FEATURE_TOUR_ID]
               return (
                 <TourTarget key={f.key} id={tourId}>
                   <Pressable
                     onPress={() => navigation.navigate(f.route)}
-                    style={({ pressed }) => [styles.featureCard, pressed && styles.featureCardPressed]}
+                    style={({ pressed }) => [styles.featureRow, pressed && { opacity: 0.7 }]}
                     accessibilityRole='button'
                     accessibilityLabel={t(f.titleKey)}
                   >
-                    <View style={styles.featureIcon}>
-                      <Icon size={22} color={colors.primary} />
+                    <View style={styles.featureOrb}>
+                      <Icon size={26} color={colors.primary} />
                     </View>
                     <YStack flex={1}>
                       <Text style={styles.featureTitle}>{t(f.titleKey)}</Text>
                       <Text style={styles.featureSub}>{t(f.subtitleKey)}</Text>
                     </YStack>
-                    <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
-                      <ChevronRight size={20} color={colors.textDisabled} />
-                    </View>
                   </Pressable>
+                  {index < FEATURES.length - 1 ? <View style={styles.featureRule} /> : null}
                 </TourTarget>
               )
             })}
           </ScrollView>
         </View>
       </Animated.View>
-    </>
+    </View>
   )
 }
 

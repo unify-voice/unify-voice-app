@@ -4,8 +4,9 @@ import { Eye, EyeOff, Fingerprint, Globe, ScanFace } from '@tamagui/lucide-icons
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native'
 import { TextInput } from 'react-native-paper'
-import { Text, View, XStack, YStack } from 'tamagui'
+import { Text, View, XStack } from 'tamagui'
 
+import Atmosphere from '../../../components/Atmosphere'
 import Screen from '../../../components/layouts/Screen'
 import { signInWithGoogle } from '../../../config/googleAuth'
 import { useLanguage } from '../../../context/Language'
@@ -141,32 +142,27 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <Screen padded={false}>
-      <View style={styles.ambientGlow} />
+      <View style={styles.root}>
+      <Atmosphere />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
           <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-            <YStack mb='$5'>
-              <XStack ai='center'>
-                <Text style={styles.brandUnify}>Unify</Text>
-                <Text style={styles.brandVoice}>Voice</Text>
-              </XStack>
-              <Text style={styles.brandSub}>{t('auth.welcomeBack')}</Text>
-            </YStack>
+            <XStack ai='center'>
+              <Text style={styles.brandUnify}>Unify</Text>
+              <Text style={styles.brandVoice}>Voice</Text>
+            </XStack>
+            <Text style={styles.brandSub}>{t('auth.welcomeBack')}</Text>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t('auth.signInTitle')}</Text>
-              <Text style={styles.cardSub}>{t('auth.signInSub')}</Text>
+            <Text style={styles.screenTitle}>{t('auth.signInTitle')}</Text>
+            <Text style={styles.screenSub}>{t('auth.signInSub')}</Text>
 
-              {errors.general ? (
-                <View style={styles.generalErr}>
-                  <Text style={styles.errText}>{errors.general}</Text>
-                </View>
-              ) : null}
+              {errors.general ? <Text style={styles.errText}>{errors.general}</Text> : null}
 
               <Text style={styles.fieldLabel}>{t('auth.email')}</Text>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='your@email.com'
                 value={email}
                 onChangeText={(txt) => {
@@ -187,6 +183,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={[styles.fieldLabel, { marginTop: 14 }]}>{t('auth.password')}</Text>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='Enter your password'
                 value={password}
                 onChangeText={(txt) => {
@@ -216,9 +213,9 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               <Pressable
                 onPress={handleLogin}
                 disabled={isLoading}
-                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: colors.primarySoft }, isLoading && { opacity: 0.5 }]}
+                style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.88 }, isLoading && { opacity: 0.5 }]}
               >
-                {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.primaryBtnText}>{t('auth.logIn')}</Text>}
+                {isLoading ? <ActivityIndicator size='small' color={colors.textOnPrimary} /> : <Text style={styles.primaryBtnText}>{t('auth.logIn')}</Text>}
               </Pressable>
 
               <XStack ai='center' gap='$3' my='$4'>
@@ -228,7 +225,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
               </XStack>
 
               <XStack gap='$3'>
-                <Pressable onPress={handleGoogle} style={({ pressed }) => [styles.socialBtn, pressed && { backgroundColor: colors.cardPressed }]}>
+                <Pressable onPress={handleGoogle} style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.75 }]}>
                   <Globe size={16} color={colors.textSecondary} />
                   <Text style={styles.socialBtnText}>{t('auth.google')}</Text>
                 </Pressable>
@@ -238,7 +235,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                   disabled={!canUseBiometrics || isLoading}
                   style={({ pressed }) => [
                     styles.socialBtn,
-                    pressed && canUseBiometrics && { backgroundColor: colors.cardPressed },
+                    pressed && canUseBiometrics && { opacity: 0.75 },
                     !canUseBiometrics && { opacity: 0.4 },
                   ]}
                 >
@@ -253,10 +250,10 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                   <Text style={styles.footerLink}>{t('auth.signUp')}</Text>
                 </Pressable>
               </XStack>
-            </View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+      </View>
     </Screen>
   )
 }

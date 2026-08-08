@@ -1,5 +1,6 @@
-import { AudioLines, HandMetal, Mic } from '@tamagui/lucide-icons-2'
 import type { ComponentType } from 'react'
+
+import { SignToTextGlyph, SpeechToSignGlyph, SpeechToTextGlyph } from '../../components/FeatureGlyphs'
 
 type FeatureIcon = ComponentType<{ size?: number; color?: string }>
 
@@ -12,21 +13,21 @@ const FEATURES: {
 }[] = [
   {
     key: 'sign-to-text',
-    Icon: HandMetal,
+    Icon: SignToTextGlyph,
     titleKey: 'feature.signToText',
     subtitleKey: 'feature.signToTextSub',
     route: 'SignToTextScreen',
   },
   {
     key: 'speech-to-sign',
-    Icon: AudioLines,
+    Icon: SpeechToSignGlyph,
     titleKey: 'feature.speechToSign',
     subtitleKey: 'feature.speechToSignSub',
     route: 'SpeechToSignScreen',
   },
   {
     key: 'speech-to-text',
-    Icon: Mic,
+    Icon: SpeechToTextGlyph,
     titleKey: 'feature.speechToText',
     subtitleKey: 'feature.speechToTextSub',
     route: 'SpeechToTextScreen',

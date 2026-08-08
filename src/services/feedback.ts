@@ -30,9 +30,10 @@ const playAsset = async (asset: number) => {
 const tap = (pattern: number | number[]) => {
   if (!hapticsEnabled) return
   try {
+    if (typeof Vibration?.vibrate !== 'function') return
     Vibration.vibrate(pattern)
   } catch {
-    // ignore devices without a vibrator
+    // missing VIBRATE permission or no vibrator — never crash recording
   }
 }
 

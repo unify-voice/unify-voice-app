@@ -24,9 +24,7 @@ const ResultActions = ({ text }: Props) => {
     borderRadius: 18,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    backgroundColor: colors.controlBg,
-    borderWidth: 1,
-    borderColor: colors.controlBorder,
+    backgroundColor: colors.clay,
   }
 
   return (

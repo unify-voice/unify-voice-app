@@ -3,6 +3,7 @@ import React from 'react'
 import { Pressable, ScrollView, View } from 'react-native'
 import { Text } from 'tamagui'
 
+import Atmosphere from '../../components/Atmosphere'
 import Screen from '../../components/layouts/Screen'
 import { useLanguage } from '../../context/Language'
 import { useAppTheme } from '../../context/Theme'
@@ -29,6 +30,7 @@ const PrivacyScreen = ({ navigation }: Props) => {
   return (
     <Screen padded={false}>
       <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
+        <Atmosphere />
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backHit} accessibilityRole='button' hitSlop={8}>
             <Text style={[styles.backText, { color: colors.primary }]}>{t('common.back')}</Text>

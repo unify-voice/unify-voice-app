@@ -3,8 +3,9 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native'
 import { TextInput } from 'react-native-paper'
-import { Text, View, XStack, YStack } from 'tamagui'
+import { Text, View, XStack } from 'tamagui'
 
+import Atmosphere from '../../../components/Atmosphere'
 import Screen from '../../../components/layouts/Screen'
 import { useLanguage } from '../../../context/Language'
 import { useAppTheme } from '../../../context/Theme'
@@ -72,38 +73,28 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <Screen padded={false}>
-      <View style={styles.ambientGlow} />
+      <View style={styles.root}>
+      <Atmosphere />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
           <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-            <YStack mb='$5'>
-              <XStack ai='center'>
-                <Text style={styles.brandUnify}>Unify</Text>
-                <Text style={styles.brandVoice}>Voice</Text>
-              </XStack>
-              <Text style={styles.brandSub}>{t('auth.brandForgotSub')}</Text>
-            </YStack>
+            <XStack ai='center'>
+              <Text style={styles.brandUnify}>Unify</Text>
+              <Text style={styles.brandVoice}>Voice</Text>
+            </XStack>
+            <Text style={styles.brandSub}>{t('auth.brandForgotSub')}</Text>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>{t('auth.forgotTitle')}</Text>
-              <Text style={styles.cardSub}>{t('auth.forgotSub')}</Text>
+            <Text style={styles.screenTitle}>{t('auth.forgotTitle')}</Text>
+            <Text style={styles.screenSub}>{t('auth.forgotSub')}</Text>
 
-              {error ? (
-                <View style={styles.errorBanner}>
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              ) : null}
-
-              {successMsg ? (
-                <View style={styles.successBanner}>
-                  <Text style={styles.successText}>{successMsg}</Text>
-                </View>
-              ) : null}
+              {error ? <Text style={styles.errText}>{error}</Text> : null}
+              {successMsg ? <Text style={styles.successText}>{successMsg}</Text> : null}
 
               <Text style={styles.fieldLabel}>{t('auth.email')}</Text>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='your@email.com'
                 value={email}
                 onChangeText={(txt) => {
@@ -125,35 +116,28 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
                 <Pressable
                   onPress={handleSendResetLink}
                   disabled={isLoading}
-                  style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: colors.primarySoft }, isLoading && { opacity: 0.5 }]}
+                  style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.88 }, isLoading && { opacity: 0.5 }]}
                 >
-                  {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.primaryBtnText}>{t('auth.sendReset')}</Text>}
+                  {isLoading ? <ActivityIndicator size='small' color={colors.textOnPrimary} /> : <Text style={styles.primaryBtnText}>{t('auth.sendReset')}</Text>}
                 </Pressable>
               ) : (
                 <Pressable
                   onPress={() => navigation.replace('Login')}
-                  style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: colors.primarySoft }]}
+                  style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.88 }]}
                 >
                   <Text style={styles.primaryBtnText}>{t('auth.backToLogin')}</Text>
                 </Pressable>
               )}
 
-              <XStack ai='center' gap='$3' my='$4'>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
-              </XStack>
-
-              <Pressable
-                onPress={() => navigation.navigate('Login')}
-                style={({ pressed }) => [styles.secondaryBtn, pressed && { borderColor: colors.controlBorder, backgroundColor: colors.controlBg }]}
-              >
-                <Text style={styles.secondaryBtnText}>{t('auth.backToLogin')}</Text>
-              </Pressable>
-            </View>
+              {!sent ? (
+                <Pressable onPress={() => navigation.navigate('Login')} style={{ alignSelf: 'center', marginTop: 22, minHeight: 44, justifyContent: 'center' }}>
+                  <Text style={styles.footerLink}>{t('auth.backToLogin')}</Text>
+                </Pressable>
+              ) : null}
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+      </View>
     </Screen>
   )
 }

@@ -5,37 +5,51 @@ import type { ThemeColors } from '../../../theme'
 const createStyles = (c: ThemeColors) =>
   StyleSheet.create({
     bottomNav: {
+      backgroundColor: 'transparent',
+      paddingHorizontal: 18,
+      paddingTop: 4,
+      paddingBottom: 8,
+    },
+    dockShadow: {
+      borderRadius: 30,
+      shadowColor: c.black,
+      shadowOpacity: 0.28,
+      shadowRadius: 22,
+      shadowOffset: { width: 0, height: 10 },
+      elevation: 14,
+    },
+    dock: {
+      borderRadius: 30,
+    },
+    dockInner: {
       flexDirection: 'row',
-      justifyContent: 'space-around',
       alignItems: 'center',
-      backgroundColor: c.background,
-      borderTopWidth: 1,
-      borderTopColor: c.rowBorder,
-      paddingTop: 10,
-      paddingBottom: 6,
+      paddingVertical: 5,
+      paddingHorizontal: 5,
     },
     navItem: {
       alignItems: 'center',
       justifyContent: 'center',
       flex: 1,
+      minHeight: 52,
+      borderRadius: 26,
+      paddingVertical: 6,
+    },
+    navItemOn: {
+      backgroundColor: c.primaryMuted,
     },
     navLabel: {
-      fontSize: 11,
+      fontSize: 10,
       color: c.textSecondary,
       marginTop: 3,
-      fontWeight: '600',
+      fontWeight: '700',
     },
     dotContainer: {
-      height: 6,
-      marginTop: 3,
-      alignItems: 'center',
-      justifyContent: 'center',
+      height: 0,
     },
     navDot: {
-      width: 4,
-      height: 4,
-      borderRadius: 2,
-      backgroundColor: c.primary,
+      width: 0,
+      height: 0,
     },
   })
 

@@ -4,10 +4,12 @@ import { Eye, EyeOff, Globe } from '@tamagui/lucide-icons-2'
 import React, { useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native'
 import { TextInput } from 'react-native-paper'
-import { Text, View, XStack, YStack } from 'tamagui'
+import { Text, View, XStack } from 'tamagui'
 
+import Atmosphere from '../../../components/Atmosphere'
 import Screen from '../../../components/layouts/Screen'
 import { signInWithGoogle } from '../../../config/googleAuth'
+import { useLanguage } from '../../../context/Language'
 import { useLoader } from '../../../context/Loader'
 import { useAppTheme } from '../../../context/Theme'
 import { enterAppAfterAuth } from '../../../navigation/enterApp'
@@ -23,6 +25,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'SignupScreen'>
 const SignupScreen: React.FC<Props> = ({ navigation }) => {
   const styles = useThemedStyles(createStyles)
   const { colors, inputTheme } = useAppTheme()
+  const { t } = useLanguage()
   const { show, hide } = useLoader()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -130,32 +133,27 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <Screen padded={false}>
-      <View style={styles.ambientGlow} />
+      <View style={styles.root}>
+      <Atmosphere />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
           <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-            <YStack mb='$5'>
-              <XStack ai='center'>
-                <Text style={styles.brandUnify}>Unify</Text>
-                <Text style={styles.brandVoice}>Voice</Text>
-              </XStack>
-              <Text style={styles.brandSub}>Create your account to access premium AI features.</Text>
-            </YStack>
+            <XStack ai='center'>
+              <Text style={styles.brandUnify}>Unify</Text>
+              <Text style={styles.brandVoice}>Voice</Text>
+            </XStack>
+            <Text style={styles.brandSub}>{t('auth.brandCreateSub')}</Text>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Create account</Text>
-              <Text style={styles.cardSub}>Secure, simple signup with a clean and focused form.</Text>
+            <Text style={styles.screenTitle}>{t('auth.createTitle')}</Text>
+            <Text style={styles.screenSub}>{t('auth.createSub')}</Text>
 
-              {errors.general ? (
-                <View style={styles.generalErr}>
-                  <Text style={styles.errText}>{errors.general}</Text>
-                </View>
-              ) : null}
+              {errors.general ? <Text style={styles.errText}>{errors.general}</Text> : null}
 
-              <FieldLabel>Full Name</FieldLabel>
+              <FieldLabel>{t('auth.fullName')}</FieldLabel>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='John Doe'
                 value={fullName}
                 onChangeText={(txt) => {
@@ -170,9 +168,10 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
               />
               {errors.fullName ? <Text style={styles.fieldErr}>{errors.fullName}</Text> : null}
 
-              <FieldLabel mt={14}>Email</FieldLabel>
+              <FieldLabel mt={14}>{t('auth.email')}</FieldLabel>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='your@email.com'
                 value={email}
                 onChangeText={(txt) => {
@@ -190,9 +189,10 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
               />
               {errors.email ? <Text style={styles.fieldErr}>{errors.email}</Text> : null}
 
-              <FieldLabel mt={14}>Password</FieldLabel>
+              <FieldLabel mt={14}>{t('auth.password')}</FieldLabel>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='Create a password'
                 value={password}
                 onChangeText={(txt) => {
@@ -215,9 +215,10 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
               />
               {errors.password ? <Text style={styles.fieldErr}>{errors.password}</Text> : null}
 
-              <FieldLabel mt={14}>Confirm Password</FieldLabel>
+              <FieldLabel mt={14}>{t('auth.confirmPassword')}</FieldLabel>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='Confirm your password'
                 value={confirmPassword}
                 onChangeText={(txt) => {
@@ -243,32 +244,32 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
               <Pressable
                 onPress={handleSignUp}
                 disabled={isLoading}
-                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: colors.primarySoft }, isLoading && { opacity: 0.5 }]}
+                style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.88 }, isLoading && { opacity: 0.5 }]}
               >
-                {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.primaryBtnText}>Sign Up</Text>}
+                {isLoading ? <ActivityIndicator size='small' color={colors.textOnPrimary} /> : <Text style={styles.primaryBtnText}>{t('auth.createCta')}</Text>}
               </Pressable>
 
               <XStack ai='center' gap='$3' my='$4'>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or continue with</Text>
+                <Text style={styles.dividerText}>{t('auth.orContinue')}</Text>
                 <View style={styles.dividerLine} />
               </XStack>
 
-              <Pressable onPress={handleGoogle} style={({ pressed }) => [styles.socialBtn, { flex: 1 }, pressed && { backgroundColor: colors.cardPressed }]}>
+              <Pressable onPress={handleGoogle} style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.75 }]}>
                 <Globe size={16} color={colors.textSecondary} />
-                <Text style={styles.socialBtnText}>Google</Text>
+                <Text style={styles.socialBtnText}>{t('auth.google')}</Text>
               </Pressable>
 
               <XStack ai='center' jc='center' gap='$2' mt='$4'>
-                <Text style={styles.footerText}>Already have an account?</Text>
+                <Text style={styles.footerText}>{t('auth.alreadyAccount')}</Text>
                 <Pressable onPress={() => navigation.navigate('Login')}>
-                  <Text style={styles.footerLink}>Log In</Text>
+                  <Text style={styles.footerLink}>{t('auth.logIn')}</Text>
                 </Pressable>
               </XStack>
-            </View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+      </View>
     </Screen>
   )
 }

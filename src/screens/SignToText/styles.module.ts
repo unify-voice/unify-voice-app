@@ -246,13 +246,9 @@ const createStyles = (c: ThemeColors) =>
       lineHeight: 22,
     },
     tipCard: {
-      marginHorizontal: 20,
-      marginBottom: 10,
-      backgroundColor: c.primaryMuted,
-      borderWidth: 1,
-      borderColor: c.primaryBorder,
-      borderRadius: 14,
-      padding: 14,
+      marginHorizontal: 24,
+      marginBottom: 12,
+      paddingVertical: 4,
     },
     tipTitle: {
       fontSize: 14,

@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useRef } from 'react'
 import { Animated, View } from 'react-native'
 
+import Atmosphere from '../../components/Atmosphere'
 import Screen from '../../components/layouts/Screen'
 import { useThemedStyles } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
@@ -25,7 +26,7 @@ const SignToTextScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <Screen padded={false}>
-      <View style={styles.ambientGlow} />
+      <Atmosphere />
 
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
         <CameraStep onFinish={() => navigation.goBack()} />

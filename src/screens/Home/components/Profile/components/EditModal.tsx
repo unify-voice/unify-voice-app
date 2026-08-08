@@ -1,4 +1,4 @@
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable } from 'react-native'
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, View } from 'react-native'
 import { Text, XStack } from 'tamagui'
 
 import { useLanguage } from '../../../../../context/Language'
@@ -35,7 +35,7 @@ const EditModal: React.FC<EditModalProps> = ({ visible, title, subtitle, onClose
                 <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={onSave} disabled={isLoading} style={[styles.saveBtn, isLoading && { opacity: 0.5 }]}>
-                {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.saveBtnText}>{t('common.save')}</Text>}
+                {isLoading ? <ActivityIndicator size='small' color={colors.textOnPrimary} /> : <Text style={styles.saveBtnText}>{t('common.save')}</Text>}
               </Pressable>
             </XStack>
           </Pressable>

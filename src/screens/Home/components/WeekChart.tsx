@@ -1,15 +1,12 @@
-import React, { useEffect, useMemo, useRef } from 'react'
-import { Animated, Pressable, View } from 'react-native'
-import { Text, XStack } from 'tamagui'
+import React, { useMemo } from 'react'
+import { Pressable, Text, View } from 'react-native'
 
 import { useLanguage } from '../../../context/Language'
+import { useAppTheme } from '../../../context/Theme'
 import { weekDayLabelKey, type WeekDayStat } from '../../../services/history'
 import { useThemedStyles } from '../../../theme'
 
 import { createStyles } from '../styles.module'
-
-const CHART_H = 88
-const STUB_H = 6
 
 type Props = {
   days: WeekDayStat[]
@@ -19,66 +16,46 @@ type Props = {
 
 const WeekChart = ({ days, total, onPress }: Props) => {
   const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
   const { t } = useLanguage()
-  const grow = useRef(new Animated.Value(0)).current
-  const signature = days.map((d) => d.count).join('-')
-
-  useEffect(() => {
-    grow.setValue(0)
-    Animated.spring(grow, { toValue: 1, friction: 7, tension: 60, useNativeDriver: false }).start()
-  }, [grow, signature])
-
   const max = useMemo(() => Math.max(1, ...days.map((d) => d.count)), [days])
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.statsCard, pressed && onPress ? styles.statsCardPressed : null]}
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={
-        total > 0 ? t('home.weekCount').replace('{count}', String(total)) : t('home.weekEmpty')
-      }
+      accessibilityLabel={total > 0 ? t('home.weekCount').replace('{count}', String(total)) : t('home.weekEmpty')}
+      style={({ pressed }) => [styles.weekBlock, pressed && { opacity: 0.78 }]}
     >
-      <XStack ai='flex-end' jc='space-between' mb={14}>
-        <View>
-          <Text style={styles.statsLabel}>{t('home.weekTitle')}</Text>
-          <Text style={styles.statsHint}>{t('home.weekHint')}</Text>
-        </View>
-        <View style={styles.statsTotalWrap}>
-          <Text style={styles.statsTotal} maxFontSizeMultiplier={1.2}>
-            {total}
-          </Text>
-          <Text style={styles.statsUnit}>{t('home.weekUnit')}</Text>
-        </View>
-      </XStack>
-
-      <View style={styles.chartTrack}>
+      <View style={styles.weekHead}>
+        <Text style={styles.weekKicker}>{t('home.weekTitle')}</Text>
+        <Text style={styles.weekTotal}>
+          {total}
+          <Text style={styles.weekUnit}>  {t('home.weekUnit')}</Text>
+        </Text>
+        <Text style={styles.weekHint}>{t('home.weekHint')}</Text>
+      </View>
+      <View style={styles.sparkRow}>
         {days.map((day) => {
-          const target = day.count <= 0 ? STUB_H : STUB_H + ((CHART_H - STUB_H) * day.count) / max
-          const height = grow.interpolate({
-            inputRange: [0, 1],
-            outputRange: [STUB_H, target],
-          })
+          const h = day.count ? 18 + (70 * day.count) / max : 10
           return (
-            <View key={day.startMs} style={styles.barSlot}>
-              <Text style={[styles.barValue, !day.count && styles.barValueHidden]}>{day.count || ' '}</Text>
-              <View style={styles.barWell}>
-                <Animated.View
-                  style={[
-                    styles.barCol,
-                    day.isToday && styles.barColActive,
-                    day.count > 0 && !day.isToday && styles.barColFilled,
-                    { height },
-                  ]}
-                />
-              </View>
-              <Text
-                style={[styles.barDayLabel, day.isToday && styles.barDayLabelToday]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                maxFontSizeMultiplier={1.2}
-              >
-                {t(weekDayLabelKey(day.index))}
+            <View key={day.startMs} style={styles.sparkSlot}>
+              <View
+                style={[
+                  styles.spark,
+                  {
+                    height: h,
+                    backgroundColor: day.isToday ? colors.primary : day.count ? colors.primary : colors.divider,
+                    opacity: day.isToday ? 1 : day.count ? 0.72 : 1,
+                    shadowColor: day.isToday ? colors.primary : 'transparent',
+                    shadowOpacity: day.isToday ? 0.55 : 0,
+                    shadowRadius: day.isToday ? 10 : 0,
+                    shadowOffset: { width: 0, height: 4 },
+                  },
+                ]}
+              />
+              <Text style={[styles.sparkDay, day.isToday && { color: colors.primary }]}>
+                {t(weekDayLabelKey(day.index)).slice(0, 1)}
               </Text>
             </View>
           )

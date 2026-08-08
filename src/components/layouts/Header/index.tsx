@@ -36,7 +36,7 @@ const Header = ({ onProfilePress }: HeaderProps) => {
         paddingHorizontal: 20,
         paddingTop: 8,
         paddingBottom: 8,
-        backgroundColor: colors.background,
+        backgroundColor: 'transparent',
         ...directionStyle(isRTL),
       }}
     >

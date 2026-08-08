@@ -5,6 +5,7 @@ import React, { useCallback, useState } from 'react'
 import { Alert, Pressable, ScrollView, View } from 'react-native'
 import { Text } from 'tamagui'
 
+import Atmosphere from '../../components/Atmosphere'
 import ResultActions from '../../components/ResultActions'
 import { useAuthUser } from '../../context/AuthUser'
 import { useLanguage } from '../../context/Language'
@@ -58,7 +59,7 @@ const ActivityScreen = (_props: Props) => {
 
   return (
     <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
-      <View style={styles.ambientGlow} />
+      <Atmosphere />
       <View style={styles.header}>
         <Text style={styles.title} maxFontSizeMultiplier={1.4}>
           {t('activity.title')}
@@ -76,9 +77,7 @@ const ActivityScreen = (_props: Props) => {
         ) : null}
 
         {items.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>{t('activity.empty')}</Text>
-          </View>
+          <Text style={styles.emptyText}>{t('activity.empty')}</Text>
         ) : (
           items.map((item) => (
             <View key={item.id} style={styles.row}>
