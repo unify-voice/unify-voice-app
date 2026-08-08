@@ -1,19 +1,22 @@
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
+import { getCachedAvatar } from '../services/avatar'
+
 type AuthUserContextValue = {
   user: FirebaseAuthTypes.User | null
   displayName: string
   email: string | null
   photoURL: string | null
   refreshUser: () => Promise<void>
+  setLocalPhotoURL: (uri: string | null) => void
 }
 
-const snapshot = (user: FirebaseAuthTypes.User | null) => ({
+const snapshot = (user: FirebaseAuthTypes.User | null, photoOverride?: string | null) => ({
   user,
   displayName: user?.displayName?.trim() || 'User',
   email: user?.email ?? null,
-  photoURL: user?.photoURL ?? null,
+  photoURL: photoOverride !== undefined ? photoOverride : user?.photoURL || null,
 })
 
 const AuthUserContext = createContext<AuthUserContextValue | null>(null)
@@ -21,14 +24,23 @@ const AuthUserContext = createContext<AuthUserContextValue | null>(null)
 export const AuthUserProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = useState(() => snapshot(auth().currentUser))
 
-  const applyUser = useCallback((user: FirebaseAuthTypes.User | null) => {
-    setState(snapshot(user))
+  const applyUser = useCallback(async (user: FirebaseAuthTypes.User | null) => {
+    if (!user) {
+      setState(snapshot(null))
+      return
+    }
+    const cached = await getCachedAvatar(user.uid)
+    setState(snapshot(user, cached || user.photoURL))
+  }, [])
+
+  const setLocalPhotoURL = useCallback((uri: string | null) => {
+    setState((prev) => ({ ...prev, photoURL: uri }))
   }, [])
 
   const refreshUser = useCallback(async () => {
     const current = auth().currentUser
     if (!current) {
-      applyUser(null)
+      await applyUser(null)
       return
     }
     try {
@@ -36,12 +48,16 @@ export const AuthUserProvider = ({ children }: { children: React.ReactNode }) =>
     } catch {
       // still publish whatever the SDK currently has
     }
-    applyUser(auth().currentUser)
+    await applyUser(auth().currentUser)
   }, [applyUser])
 
   useEffect(() => {
-    const unsubAuth = auth().onAuthStateChanged((user) => applyUser(user))
-    const unsubToken = auth().onIdTokenChanged((user) => applyUser(user))
+    const unsubAuth = auth().onAuthStateChanged((user) => {
+      void applyUser(user)
+    })
+    const unsubToken = auth().onIdTokenChanged((user) => {
+      void applyUser(user)
+    })
     return () => {
       unsubAuth()
       unsubToken()
@@ -52,8 +68,9 @@ export const AuthUserProvider = ({ children }: { children: React.ReactNode }) =>
     () => ({
       ...state,
       refreshUser,
+      setLocalPhotoURL,
     }),
-    [state, refreshUser],
+    [state, refreshUser, setLocalPhotoURL],
   )
 
   return <AuthUserContext.Provider value={value}>{children}</AuthUserContext.Provider>

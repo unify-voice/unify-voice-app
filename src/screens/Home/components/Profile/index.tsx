@@ -1,5 +1,4 @@
 import auth, { EmailAuthProvider, getAuth, updatePassword, verifyBeforeUpdateEmail } from '@react-native-firebase/auth'
-import storage from '@react-native-firebase/storage'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { CommonActions, CompositeScreenProps } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
@@ -15,6 +14,13 @@ import { useAuthUser } from '../../../../context/AuthUser'
 import { useLanguage } from '../../../../context/Language'
 import { useLoader } from '../../../../context/Loader'
 import { useAppTheme } from '../../../../context/Theme'
+import {
+  ensurePhotoLibraryPermission,
+  mapStorageError,
+  setCachedAvatar,
+  toDataUri,
+  uploadAvatarFromAsset,
+} from '../../../../services/avatar'
 import type { AppLanguage } from '../../../../i18n/translations'
 import {
   clearBiometricCredentials,
@@ -42,12 +48,12 @@ const ProfileScreen = ({ navigation }: Props) => {
   const { colors, inputTheme, isDark, toggleDark } = useAppTheme()
   const { language, setLanguage, t } = useLanguage()
   const { show, hide } = useLoader()
-  const { user, refreshUser } = useAuthUser()
+  const { user, photoURL, refreshUser, setLocalPhotoURL } = useAuthUser()
 
   const authInstance = getAuth()
 
   const [displayName, setDisplayName] = useState(user?.displayName || '')
-  const [avatarUri, setAvatarUri] = useState<string | null>(user?.photoURL || null)
+  const [avatarUri, setAvatarUri] = useState<string | null>(photoURL)
   const [activeModal, setActiveModal] = useState<ModalType>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [modalError, setModalError] = useState('')
@@ -99,8 +105,8 @@ const ProfileScreen = ({ navigation }: Props) => {
 
   useEffect(() => {
     setDisplayName(user?.displayName || '')
-    setAvatarUri(user?.photoURL || null)
-  }, [user?.displayName, user?.photoURL])
+    setAvatarUri(photoURL)
+  }, [user?.displayName, photoURL])
 
   const hasPasswordProvider = !!user?.providerData.some((p) => p.providerId === 'password')
 
@@ -153,43 +159,59 @@ const ProfileScreen = ({ navigation }: Props) => {
   const handlePickAvatar = async () => {
     const current = auth().currentUser
     if (!current) return
+
+    const allowed = await ensurePhotoLibraryPermission()
+    if (!allowed) {
+      Alert.alert('Permission needed', 'Please allow photo access to update your profile picture.')
+      return
+    }
+
     try {
       const result = await ImagePicker.launchImageLibrary({
         mediaType: 'photo',
-        includeBase64: false,
+        includeBase64: true,
         selectionLimit: 1,
-        quality: 0.8,
+        quality: 0.7,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        presentationStyle: 'pageSheet',
       })
 
-      if (!result.assets || result.assets.length === 0) return
-
-      const uri = result.assets[0].uri
-      if (!uri) {
-        Alert.alert('No image selected', 'Please select a photo.')
+      if (result.didCancel) return
+      if (result.errorCode === 'permission') {
+        Alert.alert('Permission needed', 'Please allow photo access to update your profile picture.')
         return
+      }
+
+      const asset = result.assets?.[0]
+      if (!asset?.base64 && !asset?.uri) {
+        Alert.alert('No image selected', 'Please select a photo and try again.')
+        return
+      }
+
+      const mime = asset.type?.startsWith('image/') ? asset.type : 'image/jpeg'
+      const preview = asset.base64 ? toDataUri(asset.base64, mime) : asset.uri || null
+      if (preview) {
+        setAvatarUri(preview)
+        setLocalPhotoURL(preview)
+        await setCachedAvatar(current.uid, preview)
       }
 
       show()
       try {
-        const ref = storage().ref(`avatars/${current.uid}.jpg`)
-        try {
-          await ref.putFile(uri)
-        } catch {
-          const fallbackPath = uri.startsWith('file://') ? uri.replace('file://', '') : uri
-          await ref.putFile(fallbackPath)
-        }
-        const url = await ref.getDownloadURL()
-        await current.updateProfile({ photoURL: url })
+        const { remoteUrl } = await uploadAvatarFromAsset(current.uid, asset)
+        await auth().currentUser?.updateProfile({ photoURL: remoteUrl })
+        await setCachedAvatar(current.uid, remoteUrl)
+        setLocalPhotoURL(remoteUrl)
+        setAvatarUri(remoteUrl)
         await refreshUser()
-        setAvatarUri(auth().currentUser?.photoURL || url)
-      } catch {
-        Alert.alert('Upload failed', 'Could not upload photo. Try again.')
-        setAvatarUri(auth().currentUser?.photoURL || null)
+      } catch (err) {
+        Alert.alert('Upload failed', mapStorageError(err))
       } finally {
         hide()
       }
     } catch (err) {
-      Alert.alert('Permission needed', `Please allow photo access to update your avatar in your device settings. ${err}`)
+      Alert.alert('Could not open photos', mapStorageError(err))
     }
   }
 
