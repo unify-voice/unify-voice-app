@@ -1,3 +1,8 @@
+import { AudioLines, HandMetal, Mic } from '@tamagui/lucide-icons-2'
+import type { ComponentType } from 'react'
+
+type FeatureIcon = ComponentType<{ size?: number; color?: string }>
+
 const WEEKLY_DATA = [
   { day: 'Mon', height: 28 },
   { day: 'Tue', height: 44 },
@@ -8,27 +13,33 @@ const WEEKLY_DATA = [
   { day: 'Sun', height: 8 },
 ]
 
-const FEATURES = [
+const FEATURES: {
+  key: string
+  Icon: FeatureIcon
+  titleKey: string
+  subtitleKey: string
+  route: 'SignToTextScreen' | 'SpeechToSignScreen' | 'SpeechToTextScreen'
+}[] = [
   {
     key: 'sign-to-text',
-    icon: '🤟',
-    title: 'Sign to Text',
-    subtitle: 'Camera-based sign detection',
-    route: 'SignToTextScreen' as const,
+    Icon: HandMetal,
+    titleKey: 'feature.signToText',
+    subtitleKey: 'feature.signToTextSub',
+    route: 'SignToTextScreen',
   },
   {
     key: 'speech-to-sign',
-    icon: '🗣️',
-    title: 'Speech to Sign',
-    subtitle: 'Translate spoken words visually',
-    route: 'SpeechToSignScreen' as const,
+    Icon: AudioLines,
+    titleKey: 'feature.speechToSign',
+    subtitleKey: 'feature.speechToSignSub',
+    route: 'SpeechToSignScreen',
   },
   {
     key: 'speech-to-text',
-    icon: '🎙️',
-    title: 'Speech to Text',
-    subtitle: 'Instant voice transcription',
-    route: 'SpeechToTextScreen' as const,
+    Icon: Mic,
+    titleKey: 'feature.speechToText',
+    subtitleKey: 'feature.speechToTextSub',
+    route: 'SpeechToTextScreen',
   },
 ]
 

@@ -1,32 +1,28 @@
 import { getAuth, updateProfile } from '@react-native-firebase/auth'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Eye, EyeOff } from '@tamagui/lucide-icons-2'
+import { Eye, EyeOff, Globe } from '@tamagui/lucide-icons-2'
 import React, { useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native'
+import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native'
 import { TextInput } from 'react-native-paper'
-import { Text, View, YStack, XStack } from 'tamagui'
+import { Text, View, XStack, YStack } from 'tamagui'
 
 import Screen from '../../../components/layouts/Screen'
 import { signInWithGoogle } from '../../../config/googleAuth'
-import { colors } from '../../../theme'
+import { useLoader } from '../../../context/Loader'
+import { useAppTheme } from '../../../context/Theme'
+import { getBiometryKind, getBiometryLabel, saveBiometricCredentials } from '../../../services/biometrics'
+import { useThemedStyles } from '../../../theme'
 import { RootStackParamList } from '../../../types/navigation'
+import { mapAuthError } from '../../../utils/authErrors'
 
-import { styles } from './styles.module'
+import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignupScreen'>
 
-const INPUT_THEME = {
-  colors: {
-    text: '#ffffff',
-    primary: colors.primary,
-    background: 'rgba(255,255,255,0.04)',
-    placeholder: 'rgba(255,255,255,0.4)',
-    onSurface: '#ffffff',
-    onSurfaceVariant: 'rgba(255,255,255,0.5)',
-  },
-}
-
 const SignupScreen: React.FC<Props> = ({ navigation }) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors, inputTheme } = useAppTheme()
+  const { show, hide } = useLoader()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -70,19 +66,31 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
     if (!email.trim()) e.email = 'Email is required'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Enter a valid email address'
     if (!password) e.password = 'Password is required'
+    else if (password.length < 6) e.password = 'Password must be at least 6 characters'
     if (!confirmPassword) e.confirmPassword = 'Please confirm your password'
     else if (password !== confirmPassword) e.confirmPassword = 'Passwords do not match'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
-  const mapError = (code: string) =>
-    ({
-      'auth/email-already-in-use': 'This email is already registered',
-      'auth/weak-password': 'Password should be at least 6 characters',
-      'auth/network-request-failed': 'Network error, please try again',
-      'auth/invalid-email': 'Enter a valid email address',
-    })[code] ?? 'Something went wrong. Try again'
+  const offerBiometrics = async (userEmail: string, userPassword: string) => {
+    const kind = await getBiometryKind()
+    if (kind === 'none') return
+    const label = await getBiometryLabel()
+    Alert.alert(`Enable ${label}?`, `Use ${label} for faster sign-in next time.`, [
+      { text: 'Not now', style: 'cancel' },
+      {
+        text: 'Enable',
+        onPress: async () => {
+          try {
+            await saveBiometricCredentials(userEmail, userPassword)
+          } catch {
+            // optional
+          }
+        },
+      },
+    ])
+  }
 
   const handleSignUp = async () => {
     setErrors((e) => ({ ...e, general: undefined }))
@@ -90,28 +98,30 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
     setIsLoading(true)
     try {
       const cred = await authInstance.createUserWithEmailAndPassword(email.trim(), password)
-      await updateProfile(cred.user, { displayName: fullName || 'User' })
-      navigation.replace('MainTabs', {
-        screen: 'HomeScreen',
-      })
+      try {
+        await updateProfile(cred.user, { displayName: fullName.trim() })
+      } catch {
+        // Account exists; name can be updated later in Profile
+      }
+      await offerBiometrics(email.trim(), password)
+      navigation.replace('MainTabs', { screen: 'HomeScreen' })
     } catch (err: any) {
-      setErrors((e) => ({ ...e, general: mapError(err.code) }))
+      setErrors((e) => ({ ...e, general: mapAuthError(err?.code) }))
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleGoogle = async () => {
-    setIsLoading(true)
+    show()
     try {
       await signInWithGoogle()
-      navigation.replace('MainTabs', {
-        screen: 'HomeScreen',
-      })
-    } catch {
-      setErrors((e) => ({ ...e, general: 'Google sign-in failed. Try again.' }))
+      navigation.replace('MainTabs', { screen: 'HomeScreen' })
+    } catch (err: any) {
+      if (err?.code === 'SIGN_IN_CANCELLED' || err?.message?.includes('cancel')) return
+      setErrors((e) => ({ ...e, general: err?.message || 'Google sign-in failed. Try again.' }))
     } finally {
-      setIsLoading(false)
+      hide()
     }
   }
 
@@ -147,15 +157,15 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
                 mode='flat'
                 placeholder='John Doe'
                 value={fullName}
-                onChangeText={(t) => {
-                  setFullName(t)
+                onChangeText={(txt) => {
+                  setFullName(txt)
                   setErrors((e) => ({ ...e, fullName: undefined }))
                 }}
-                outlineColor={errors.fullName ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.1)'}
-                activeOutlineColor={errors.fullName ? '#f87171' : colors.primary}
+                outlineColor={errors.fullName ? colors.errorBorder : colors.inputOutline}
+                activeOutlineColor={errors.fullName ? colors.errorText : colors.primary}
                 style={styles.input}
-                placeholderTextColor='rgba(255,255,255,0.2)'
-                theme={INPUT_THEME}
+                placeholderTextColor={colors.textFaint}
+                theme={inputTheme}
               />
               {errors.fullName ? <Text style={styles.fieldErr}>{errors.fullName}</Text> : null}
 
@@ -164,17 +174,18 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
                 mode='flat'
                 placeholder='your@email.com'
                 value={email}
-                onChangeText={(t) => {
-                  setEmail(t)
+                onChangeText={(txt) => {
+                  setEmail(txt)
                   setErrors((e) => ({ ...e, email: undefined }))
                 }}
                 keyboardType='email-address'
                 autoCapitalize='none'
-                outlineColor={errors.email ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.1)'}
-                activeOutlineColor={errors.email ? '#f87171' : colors.primary}
+                autoCorrect={false}
+                outlineColor={errors.email ? colors.errorBorder : colors.inputOutline}
+                activeOutlineColor={errors.email ? colors.errorText : colors.primary}
                 style={styles.input}
-                placeholderTextColor='rgba(255,255,255,0.2)'
-                theme={INPUT_THEME}
+                placeholderTextColor={colors.textFaint}
+                theme={inputTheme}
               />
               {errors.email ? <Text style={styles.fieldErr}>{errors.email}</Text> : null}
 
@@ -183,23 +194,23 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
                 mode='flat'
                 placeholder='Create a password'
                 value={password}
-                onChangeText={(t) => {
-                  setPassword(t)
+                onChangeText={(txt) => {
+                  setPassword(txt)
                   setErrors((e) => ({ ...e, password: undefined }))
                 }}
                 secureTextEntry={!showPassword}
                 right={
                   <TextInput.Icon
-                    icon={() => (showPassword ? <EyeOff size={18} /> : <Eye size={18} />)}
-                    color='rgba(255,255,255,0.3)'
+                    icon={() => (showPassword ? <EyeOff size={18} color={colors.textMuted} /> : <Eye size={18} color={colors.textMuted} />)}
+                    color={colors.textMuted}
                     onPress={() => setShowPassword((v) => !v)}
                   />
                 }
-                outlineColor={errors.password ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.1)'}
-                activeOutlineColor={errors.password ? '#f87171' : colors.primary}
+                outlineColor={errors.password ? colors.errorBorder : colors.inputOutline}
+                activeOutlineColor={errors.password ? colors.errorText : colors.primary}
                 style={styles.input}
-                placeholderTextColor='rgba(255,255,255,0.2)'
-                theme={INPUT_THEME}
+                placeholderTextColor={colors.textFaint}
+                theme={inputTheme}
               />
               {errors.password ? <Text style={styles.fieldErr}>{errors.password}</Text> : null}
 
@@ -208,30 +219,30 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
                 mode='flat'
                 placeholder='Confirm your password'
                 value={confirmPassword}
-                onChangeText={(t) => {
-                  setConfirmPassword(t)
+                onChangeText={(txt) => {
+                  setConfirmPassword(txt)
                   setErrors((e) => ({ ...e, confirmPassword: undefined }))
                 }}
                 secureTextEntry={!showConfirm}
                 right={
                   <TextInput.Icon
-                    icon={() => (showConfirm ? <EyeOff size={18} /> : <Eye size={18} />)}
-                    color='rgba(255,255,255,0.3)'
+                    icon={() => (showConfirm ? <EyeOff size={18} color={colors.textMuted} /> : <Eye size={18} color={colors.textMuted} />)}
+                    color={colors.textMuted}
                     onPress={() => setShowConfirm((v) => !v)}
                   />
                 }
-                outlineColor={errors.confirmPassword ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.1)'}
-                activeOutlineColor={errors.confirmPassword ? '#f87171' : colors.primary}
+                outlineColor={errors.confirmPassword ? colors.errorBorder : colors.inputOutline}
+                activeOutlineColor={errors.confirmPassword ? colors.errorText : colors.primary}
                 style={styles.input}
-                placeholderTextColor='rgba(255,255,255,0.2)'
-                theme={INPUT_THEME}
+                placeholderTextColor={colors.textFaint}
+                theme={inputTheme}
               />
               {errors.confirmPassword ? <Text style={styles.fieldErr}>{errors.confirmPassword}</Text> : null}
 
               <Pressable
                 onPress={handleSignUp}
                 disabled={isLoading}
-                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: 'rgba(34,197,94,0.2)' }, isLoading && { opacity: 0.5 }]}
+                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: colors.primarySoft }, isLoading && { opacity: 0.5 }]}
               >
                 {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.primaryBtnText}>Sign Up</Text>}
               </Pressable>
@@ -242,17 +253,10 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={styles.dividerLine} />
               </XStack>
 
-              <XStack gap='$3'>
-                <Pressable onPress={handleGoogle} style={({ pressed }) => [styles.socialBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.07)' }]}>
-                  <Text style={{ fontSize: 15 }}>🌐</Text>
-                  <Text style={styles.socialBtnText}>Google</Text>
-                </Pressable>
-
-                <Pressable style={({ pressed }) => [styles.socialBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.07)' }]}>
-                  <Text style={{ fontSize: 16 }}>⬡</Text>
-                  <Text style={styles.socialBtnText}>Face ID</Text>
-                </Pressable>
-              </XStack>
+              <Pressable onPress={handleGoogle} style={({ pressed }) => [styles.socialBtn, { flex: 1 }, pressed && { backgroundColor: colors.cardPressed }]}>
+                <Globe size={16} color={colors.textSecondary} />
+                <Text style={styles.socialBtnText}>Google</Text>
+              </Pressable>
 
               <XStack ai='center' jc='center' gap='$2' mt='$4'>
                 <Text style={styles.footerText}>Already have an account?</Text>

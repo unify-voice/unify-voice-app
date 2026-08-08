@@ -2,20 +2,26 @@ import { getAuth } from '@react-native-firebase/auth'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { CompositeScreenProps } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { ArrowUpRight, ChevronRight } from '@tamagui/lucide-icons-2'
 import React, { useEffect, useRef } from 'react'
 import { Animated, Pressable, ScrollView } from 'react-native'
 import { Text, View, XStack, YStack } from 'tamagui'
 
-import { colors } from '../../theme'
+import { useLanguage } from '../../context/Language'
+import { useAppTheme } from '../../context/Theme'
+import { useThemedStyles } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
 import { TabParamList } from '../../types/tabs'
 
 import { FEATURES, WEEKLY_DATA } from './const'
-import { styles } from './styles.module'
+import { createStyles } from './styles.module'
 
 type Props = CompositeScreenProps<BottomTabScreenProps<TabParamList, 'HomeScreen'>, NativeStackScreenProps<RootStackParamList>>
 
 const HomeScreen = ({ navigation }: Props) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
+  const { t } = useLanguage()
   const authInstance = getAuth()
   const user = authInstance.currentUser
   const displayName = user?.displayName || 'User'
@@ -32,9 +38,9 @@ const HomeScreen = ({ navigation }: Props) => {
 
   const getGreeting = () => {
     const h = new Date().getHours()
-    if (h < 12) return 'Good morning'
-    if (h < 18) return 'Good afternoon'
-    return 'Good evening'
+    if (h < 12) return t('home.greeting.morning')
+    if (h < 18) return t('home.greeting.afternoon')
+    return t('home.greeting.evening')
   }
 
   return (
@@ -45,14 +51,14 @@ const HomeScreen = ({ navigation }: Props) => {
         <YStack px='$5' mt='$3'>
           <Text style={styles.greetingLabel}>{getGreeting()}</Text>
           <Text style={styles.welcomeName}>{displayName}</Text>
-          <Text style={styles.welcomeSub}>Bridging communication gaps with modern AI.</Text>
+          <Text style={styles.welcomeSub}>{t('home.welcomeSub')}</Text>
         </YStack>
 
         <XStack px='$5' mt='$4' gap='$2'>
           {[
-            { label: 'Sessions', value: '124', unit: 'total', trend: '↑ 12 this week', trendColor: colors.primary },
-            { label: 'Words', value: '3.2k', unit: 'conv.', trend: '↑ 8% vs last', trendColor: colors.primary },
-            { label: 'Accuracy', value: '97', unit: '%', trend: 'Stable', trendColor: 'rgba(255,255,255,0.3)' },
+            { label: 'Sessions', value: '124', unit: 'total', trend: '12 this week', trendColor: colors.primary, up: true },
+            { label: 'Words', value: '3.2k', unit: 'conv.', trend: '8% vs last', trendColor: colors.primary, up: true },
+            { label: 'Accuracy', value: '97', unit: '%', trend: 'Stable', trendColor: colors.textMuted, up: false },
           ].map((s) => (
             <View key={s.label} style={styles.statCard}>
               <Text style={styles.statLabel}>{s.label}</Text>
@@ -60,14 +66,17 @@ const HomeScreen = ({ navigation }: Props) => {
                 <Text style={styles.statValue}>{s.value}</Text>
                 <Text style={styles.statUnit}>{s.unit}</Text>
               </XStack>
-              <Text style={[styles.statTrend, { color: s.trendColor }]}>{s.trend}</Text>
+              <XStack ai='center' gap='$1' mt={2}>
+                {s.up ? <ArrowUpRight size={10} color={s.trendColor} /> : null}
+                <Text style={[styles.statTrend, { color: s.trendColor }]}>{s.trend}</Text>
+              </XStack>
             </View>
           ))}
         </XStack>
 
         <YStack px='$5' mt='$4'>
           <XStack jc='space-between' ai='center' mb='$2'>
-            <Text style={styles.usageLabel}>Daily usage limit</Text>
+            <Text style={styles.usageLabel}>{t('home.usage')}</Text>
             <Text style={styles.usagePct}>68%</Text>
           </XStack>
           <View style={styles.barBg}>
@@ -78,7 +87,7 @@ const HomeScreen = ({ navigation }: Props) => {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.sectionCard}>
             <XStack jc='space-between' ai='center' mb='$3'>
-              <Text style={styles.sectionCardTitle}>Weekly activity</Text>
+              <Text style={styles.sectionCardTitle}>{t('home.weekly')}</Text>
               <Text style={styles.sectionCardPeriod}>This week</Text>
             </XStack>
             <XStack ai='flex-end' gap='$2' style={{ height: 68 }}>
@@ -91,24 +100,27 @@ const HomeScreen = ({ navigation }: Props) => {
             </XStack>
           </View>
 
-          <Text style={styles.sectionLabel}>Communication modes</Text>
+          <Text style={styles.sectionLabel}>{t('home.features')}</Text>
 
-          {FEATURES.map((f) => (
-            <Pressable
-              key={f.key}
-              onPress={() => navigation.navigate(f.route as any)}
-              style={({ pressed }) => [styles.featureCard, pressed && styles.featureCardPressed]}
-            >
-              <View style={styles.featureIcon}>
-                <Text style={{ fontSize: 20 }}>{f.icon}</Text>
-              </View>
-              <YStack flex={1}>
-                <Text style={styles.featureTitle}>{f.title}</Text>
-                <Text style={styles.featureSub}>{f.subtitle}</Text>
-              </YStack>
-              <Text style={styles.featureArrow}>›</Text>
-            </Pressable>
-          ))}
+          {FEATURES.map((f) => {
+            const Icon = f.Icon
+            return (
+              <Pressable
+                key={f.key}
+                onPress={() => navigation.navigate(f.route)}
+                style={({ pressed }) => [styles.featureCard, pressed && styles.featureCardPressed]}
+              >
+                <View style={styles.featureIcon}>
+                  <Icon size={22} color={colors.primary} />
+                </View>
+                <YStack flex={1}>
+                  <Text style={styles.featureTitle}>{t(f.titleKey)}</Text>
+                  <Text style={styles.featureSub}>{t(f.subtitleKey)}</Text>
+                </YStack>
+                <ChevronRight size={20} color={colors.textDisabled} />
+              </Pressable>
+            )
+          })}
         </ScrollView>
       </Animated.View>
     </>

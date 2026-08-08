@@ -1,50 +1,134 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect, useRef, useState } from 'react'
+import { CircleStop, FileText, Mic, RefreshCw } from '@tamagui/lucide-icons-2'
+import React, { useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import { Animated, Modal, PermissionsAndroid, Platform, Pressable, ScrollView, StyleSheet, Text as RNText, View } from 'react-native'
 import AudioRecorderPlayer from 'react-native-audio-recorder-player'
 import { Text, XStack, YStack } from 'tamagui'
 
-import { API_BASE_URL } from '../../../config'
+import { API_BASE_URLS } from '../../../config'
 import Screen from '../../components/layouts/Screen'
-import { colors } from '../../theme'
+import { useAppTheme } from '../../context/Theme'
+import { useThemedStyles, type ThemeColors } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
 
-import { styles } from './styles.module'
+import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SpeechToTextScreen'>
+type IconComponent = ComponentType<{ size?: number; color?: string }>
 
 const audioRecorderPlayer = new AudioRecorderPlayer()
 
-const CARD_BG = '#1e293b'
-const BORDER = '#334155'
-const GREEN = '#22c55e'
-
 // ── Guide steps ───────────────────────────────────────────────────────────────
-const GUIDE_STEPS = [
+const GUIDE_STEPS: { Icon: IconComponent; title: string; body: string }[] = [
   {
-    icon: '🎙️',
+    Icon: Mic,
     title: 'Tap to start',
     body: 'Press the microphone button and speak clearly. The waveform animates while it listens.',
   },
   {
-    icon: '⏹️',
+    Icon: CircleStop,
     title: 'Tap again to stop',
     body: 'Tap the mic a second time when you are done. Your audio is transcribed automatically.',
   },
   {
-    icon: '📝',
+    Icon: FileText,
     title: 'Read your transcript',
     body: 'Each recording appears as a new line below. You can record multiple times — they stack up.',
   },
   {
-    icon: '🔄',
+    Icon: RefreshCw,
     title: 'Start fresh anytime',
     body: 'Tap Clear to wipe the transcript and begin again. English and Urdu are both supported.',
   },
 ]
 
+const createGuideStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: c.overlayStrong,
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: c.slate,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      paddingHorizontal: 24,
+      paddingTop: 20,
+      paddingBottom: 36,
+      borderTopWidth: 1,
+      borderColor: c.slateBorder,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    headerLabel: {
+      color: c.slateTextMuted,
+      fontSize: 13,
+      fontWeight: '600',
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+    },
+    skipBtn: { color: c.slateTextMuted, fontSize: 14 },
+    dot: { height: 6, borderRadius: 3 },
+    dotActive: { width: 24, backgroundColor: c.primary },
+    dotInactive: { width: 6, backgroundColor: c.slateBorder },
+    stepContent: {
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      minHeight: 210,
+    },
+    iconBubble: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: c.slateMuted,
+      borderWidth: 2,
+      borderColor: c.slateBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+    },
+    stepTitle: {
+      color: c.slateText,
+      fontSize: 22,
+      fontWeight: '700',
+      textAlign: 'center',
+      marginBottom: 10,
+      letterSpacing: -0.3,
+    },
+    stepBody: {
+      color: c.slateTextMuted,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+    },
+    counter: {
+      color: c.slateTextMuted,
+      fontSize: 12,
+      textAlign: 'center',
+      marginTop: 18,
+    },
+    btn: {
+      flex: 1,
+      height: 50,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnPrimary: { backgroundColor: c.primary },
+    btnPrimaryText: { color: c.black, fontSize: 15, fontWeight: '700' },
+    btnSecondary: { backgroundColor: c.slate, borderWidth: 1, borderColor: c.slateBorder },
+    btnSecondaryText: { color: c.slateTextMuted, fontSize: 15, fontWeight: '600' },
+  })
+
 // ── Guide modal ───────────────────────────────────────────────────────────────
 const GuideModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
+  const { colors } = useAppTheme()
+  const guide = useMemo(() => createGuideStyles(colors), [colors])
   const [step, setStep] = useState(0)
   const slideAnim = useRef(new Animated.Value(0)).current
   const fadeAnim = useRef(new Animated.Value(1)).current
@@ -91,7 +175,7 @@ const GuideModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visib
           {/* Animated content */}
           <Animated.View style={[guide.stepContent, { opacity: fadeAnim, transform: [{ translateX: slideAnim }] }]}>
             <View style={guide.iconBubble}>
-              <RNText style={guide.iconText}>{current.icon}</RNText>
+              <current.Icon size={38} color={colors.primary} />
             </View>
             <RNText style={guide.stepTitle}>{current.title}</RNText>
             <RNText style={guide.stepBody}>{current.body}</RNText>
@@ -120,92 +204,10 @@ const GuideModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visib
   )
 }
 
-// ── Guide styles ──────────────────────────────────────────────────────────────
-const guide = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: CARD_BG,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 36,
-    borderTopWidth: 1,
-    borderColor: BORDER,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerLabel: {
-    color: '#94a3b8',
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  skipBtn: { color: '#64748b', fontSize: 14 },
-  dot: { height: 6, borderRadius: 3 },
-  dotActive: { width: 24, backgroundColor: GREEN },
-  dotInactive: { width: 6, backgroundColor: BORDER },
-  stepContent: {
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    minHeight: 210,
-  },
-  iconBubble: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#0f172a',
-    borderWidth: 2,
-    borderColor: BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  iconText: { fontSize: 38 },
-  stepTitle: {
-    color: '#f1f5f9',
-    fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 10,
-    letterSpacing: -0.3,
-  },
-  stepBody: {
-    color: '#94a3b8',
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  counter: {
-    color: '#475569',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 18,
-  },
-  btn: {
-    flex: 1,
-    height: 50,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnPrimary: { backgroundColor: GREEN },
-  btnPrimaryText: { color: '#000', fontSize: 15, fontWeight: '700' },
-  btnSecondary: { backgroundColor: '#1e293b', borderWidth: 1, borderColor: BORDER },
-  btnSecondaryText: { color: '#94a3b8', fontSize: 15, fontWeight: '600' },
-})
-
 // ── Main screen ───────────────────────────────────────────────────────────────
 const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
   const [isListening, setIsListening] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [transcript, setTranscript] = useState<string[]>([])
@@ -267,7 +269,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
       name: 'recording.m4a',
       type: 'audio/m4a',
     } as any)
-    const response = await fetch(`${API_BASE_URL}/transcribe`, { method: 'POST', body: formData })
+    const response = await fetch(`${API_BASE_URLS.speechToText}/transcribe`, { method: 'POST', body: formData })
     return response.json()
   }
 
@@ -286,9 +288,13 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
       setIsUploading(true)
       const resultPath = await audioRecorderPlayer.stopRecorder()
       const result = await uploadAudio(resultPath || audioPath)
-      if (result?.text) setTranscript((prev) => [...prev, result.text])
-    } catch (e) {
-      console.log('Stop recording error:', e)
+      const displayText = result?.language === 'ur' ? result?.roman_urdu : result?.text
+
+      if (displayText) {
+        setTranscript((prev) => [...prev, displayText])
+      }
+    } catch {
+      // Transcription failed — leave transcript unchanged
     } finally {
       setIsUploading(false)
     }
@@ -324,14 +330,14 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
                 width: 32,
                 height: 32,
                 borderRadius: 16,
-                backgroundColor: CARD_BG,
+                backgroundColor: colors.slate,
                 borderWidth: 1,
-                borderColor: BORDER,
+                borderColor: colors.slateBorder,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <RNText style={{ color: '#94a3b8', fontSize: 15, fontWeight: '700' }}>?</RNText>
+              <RNText style={{ color: colors.slateTextMuted, fontSize: 15, fontWeight: '700' }}>?</RNText>
             </Pressable>
           </XStack>
         </YStack>
@@ -347,7 +353,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
                   styles.waveBar,
                   {
                     transform: [{ scaleY: anim }],
-                    backgroundColor: isListening ? colors.primary : 'rgba(255,255,255,0.12)',
+                    backgroundColor: isListening ? colors.primary : colors.divider,
                   },
                 ]}
               />
@@ -358,7 +364,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
           <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
             <Pressable onPress={toggleListening} style={[styles.micBtn, isListening && styles.micBtnActive]}>
               {isListening && <View style={styles.micBtnRing} />}
-              <Text style={{ fontSize: 28 }}>🎙️</Text>
+              <Mic size={28} color={colors.primary} />
             </Pressable>
           </Animated.View>
 

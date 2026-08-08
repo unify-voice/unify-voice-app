@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { Animated } from 'react-native'
 import { YStack, Spinner } from 'tamagui'
 
-import { colors } from '../theme'
+import { useAppTheme } from './Theme'
 
 type LoaderContextType = {
   show: () => void
@@ -18,6 +18,7 @@ export const useLoader = () => useContext(LoaderContext)
 
 export const LoaderProvider = ({ children }: { children: React.ReactNode }) => {
   const [visible, setVisible] = useState(false)
+  const { colors } = useAppTheme()
 
   // Fix: useRef to avoid Animated.Value recreation
   const opacity = useRef(new Animated.Value(0)).current
@@ -66,7 +67,7 @@ export const LoaderProvider = ({ children }: { children: React.ReactNode }) => {
             bottom: 0,
             justifyContent: 'center',
             alignItems: 'center',
-            backgroundColor: 'rgba(0,0,0,0.6)',
+            backgroundColor: colors.overlay,
             opacity,
             zIndex: 999,
           }}
@@ -77,7 +78,7 @@ export const LoaderProvider = ({ children }: { children: React.ReactNode }) => {
               transform: [{ scale }],
             }}
           >
-            <YStack bg='#161616' p='$5' br='$6' ai='center' jc='center' borderWidth={1} borderColor='rgba(255,255,255,0.08)' gap='$3'>
+            <YStack bg={colors.surfaceElevated} p='$5' br='$6' ai='center' jc='center' borderWidth={1} borderColor={colors.divider} gap='$3'>
               <Spinner size='large' color={colors.primary} />
             </YStack>
           </Animated.View>

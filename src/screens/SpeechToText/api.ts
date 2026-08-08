@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '../../../config'
+import { API_BASE_URLS } from '../../../config'
 
 export const transcribeAudio = async (audioPath: string) => {
   const formData = new FormData()
@@ -9,7 +9,7 @@ export const transcribeAudio = async (audioPath: string) => {
     type: 'audio/m4a',
   } as any)
 
-  const response = await fetch(`${API_BASE_URL}/transcribe`, {
+  const response = await fetch(`${API_BASE_URLS.speechToText}/transcribe`, {
     method: 'POST',
     body: formData,
   })

@@ -1,25 +1,29 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useCallback, useRef, useState } from 'react'
+import { AudioLines, HandMetal, Mic } from '@tamagui/lucide-icons-2'
+import React, { useCallback, useRef, useState, type ComponentType } from 'react'
 import { Animated, FlatList, Pressable, useWindowDimensions } from 'react-native'
 import { Text, View, XStack, YStack } from 'tamagui'
 
 import Screen from '../../components/layouts/Screen'
-import { colors } from '../../theme'
+import { useAppTheme } from '../../context/Theme'
 import { RootStackParamList } from '../../types/navigation'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList as new () => FlatList<Slide>)
 
+type IconComponent = ComponentType<{ size?: number; color?: string }>
+
 interface Slide {
   key: string
   tag: string
   title: string
-  icon: string
+  Icon: IconComponent
   description: string
 }
 
 const OnboardingScreen = ({ navigation }: Props) => {
+  const { colors } = useAppTheme()
   const [activeIndex, setActiveIndex] = useState(0)
   const { width } = useWindowDimensions()
   const listRef = useRef<FlatList<Slide> | null>(null)
@@ -88,9 +92,9 @@ const OnboardingScreen = ({ navigation }: Props) => {
           width={84}
           height={84}
           borderRadius={42}
-          backgroundColor='rgba(34,197,94,0.07)'
+          backgroundColor={colors.primaryMuted}
           borderWidth={1.5}
-          borderColor='rgba(34,197,94,0.4)'
+          borderColor={colors.primaryBorderStrong}
           alignItems='center'
           justifyContent='center'
           marginBottom='$5'
@@ -101,7 +105,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
             shadowRadius: 18,
           }}
         >
-          <Text fontSize={30}>{item.icon}</Text>
+          <item.Icon size={34} color={colors.primary} />
         </View>
 
         <YStack ai='center' gap='$2'>
@@ -112,11 +116,11 @@ const OnboardingScreen = ({ navigation }: Props) => {
           <Text
             fontSize={28}
             fontWeight='900'
-            color='#f0f0f0'
+            color={colors.textPrimary}
             textAlign='center'
             letterSpacing={0.5}
             style={{
-              textShadowColor: 'rgba(34,197,94,0.2)',
+              textShadowColor: colors.primaryBorder,
               textShadowRadius: 20,
               textShadowOffset: { width: 0, height: 0 },
             }}
@@ -124,9 +128,9 @@ const OnboardingScreen = ({ navigation }: Props) => {
             {item.title}
           </Text>
 
-          <View width={36} height={1} backgroundColor='rgba(34,197,94,0.35)' my='$1' />
+          <View width={36} height={1} backgroundColor={colors.primaryBorderStrong} my='$1' />
 
-          <Text fontSize={13} color='rgba(255,255,255,0.4)' textAlign='center' lineHeight={22} maxWidth={260} fontWeight='300'>
+          <Text fontSize={13} color={colors.textFaint} textAlign='center' lineHeight={22} maxWidth={260} fontWeight='300'>
             {item.description}
           </Text>
         </YStack>
@@ -160,7 +164,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
           height: 240,
           borderRadius: 120,
           borderWidth: 1,
-          borderColor: 'rgba(34,197,94,0.18)',
+          borderColor: colors.primarySoft,
           top: '38%',
           left: '50%',
           marginLeft: -120,
@@ -174,7 +178,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
         height={360}
         borderRadius={180}
         borderWidth={1}
-        borderColor='rgba(34,197,94,0.08)'
+        borderColor={colors.primaryRing}
         top='38%'
         left='50%'
         style={{ marginLeft: -180, marginTop: -180 }}
@@ -182,7 +186,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
 
       <XStack jc='flex-end' px='$5' pt='$5' pb='$2'>
         <Pressable onPress={handleSkip} hitSlop={12}>
-          <Text fontSize={10} letterSpacing={2} color='rgba(255,255,255,0.3)' style={{ textTransform: 'uppercase' }}>
+          <Text fontSize={10} letterSpacing={2} color={colors.textMuted} style={{ textTransform: 'uppercase' }}>
             Skip
           </Text>
         </Pressable>
@@ -212,7 +216,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
               key={index}
               height={4}
               borderRadius={2}
-              backgroundColor={index === activeIndex ? colors.primary : 'rgba(34,197,94,0.25)'}
+              backgroundColor={index === activeIndex ? colors.primary : colors.primarySoft}
               style={{
                 width: index === activeIndex ? 24 : 8,
                 transition: 'all 0.3s',
@@ -224,9 +228,9 @@ const OnboardingScreen = ({ navigation }: Props) => {
         <Pressable
           onPress={handleNext}
           style={({ pressed }) => ({
-            backgroundColor: pressed ? 'rgba(34,197,94,0.2)' : 'rgba(34,197,94,0.1)',
+            backgroundColor: pressed ? colors.primarySoft : colors.primaryMuted,
             borderWidth: 1,
-            borderColor: 'rgba(34,197,94,0.4)',
+            borderColor: colors.primaryBorderStrong,
             borderRadius: 999,
             paddingHorizontal: 22,
             paddingVertical: 10,
@@ -250,21 +254,21 @@ const slideData: Slide[] = [
     key: 'sign-to-text',
     tag: 'Feature 01',
     title: 'Sign to Text',
-    icon: '🤟',
+    Icon: HandMetal,
     description: 'Instantly translate sign language gestures into text using advanced camera recognition technology.',
   },
   {
     key: 'speech-to-sign',
     tag: 'Feature 02',
     title: 'Speech to Sign',
-    icon: '🗣️',
+    Icon: AudioLines,
     description: 'Convert spoken words into animated sign visuals in real time for seamless communication.',
   },
   {
     key: 'speech-to-text',
     tag: 'Feature 03',
     title: 'Speech to Text',
-    icon: '🎙️',
+    Icon: Mic,
     description: 'Transform spoken Urdu and English speech into clear, accurate readable text instantly.',
   },
 ]

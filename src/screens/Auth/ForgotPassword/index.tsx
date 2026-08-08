@@ -6,18 +6,25 @@ import { TextInput } from 'react-native-paper'
 import { Text, View, XStack, YStack } from 'tamagui'
 
 import Screen from '../../../components/layouts/Screen'
-import { colors, INPUT_THEME } from '../../../theme'
+import { useLanguage } from '../../../context/Language'
+import { useAppTheme } from '../../../context/Theme'
+import { useThemedStyles } from '../../../theme'
 import { RootStackParamList } from '../../../types/navigation'
+import { mapAuthError } from '../../../utils/authErrors'
 
-import { styles } from './styles.module'
+import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPasswordScreen'>
 
 const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors, inputTheme } = useAppTheme()
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | undefined>()
   const [successMsg, setSuccessMsg] = useState<string | undefined>()
+  const [sent, setSent] = useState(false)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.98)).current
@@ -48,14 +55,16 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     setIsLoading(true)
     try {
       await auth().sendPasswordResetEmail(email.trim())
-      setSuccessMsg('A reset link has been sent to your email address.')
+      // Neutral copy: email enumeration protection may hide user-not-found
+      setSuccessMsg(t('auth.resetSent'))
+      setSent(true)
     } catch (err: any) {
-      const msg: Record<string, string> = {
-        'auth/user-not-found': 'No account found with this email.',
-        'auth/network-request-failed': 'Network error, please try again.',
-        'auth/invalid-email': 'Enter a valid email address.',
+      if (err?.code === 'auth/user-not-found') {
+        setSuccessMsg(t('auth.resetSent'))
+        setSent(true)
+      } else {
+        setError(mapAuthError(err?.code))
       }
-      setError(msg[err.code] ?? 'Something went wrong. Try again.')
     } finally {
       setIsLoading(false)
     }
@@ -73,12 +82,12 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
                 <Text style={styles.brandUnify}>Unify</Text>
                 <Text style={styles.brandVoice}>Voice</Text>
               </XStack>
-              <Text style={styles.brandSub}>Enter your email to reset your password securely.</Text>
+              <Text style={styles.brandSub}>{t('auth.brandForgotSub')}</Text>
             </YStack>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Forgot Password</Text>
-              <Text style={styles.cardSub}>We'll send a secure reset link to your email address.</Text>
+              <Text style={styles.cardTitle}>{t('auth.forgotTitle')}</Text>
+              <Text style={styles.cardSub}>{t('auth.forgotSub')}</Text>
 
               {error ? (
                 <View style={styles.errorBanner}>
@@ -92,31 +101,42 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
                 </View>
               ) : null}
 
-              <Text style={styles.fieldLabel}>Email</Text>
+              <Text style={styles.fieldLabel}>{t('auth.email')}</Text>
               <TextInput
                 mode='flat'
                 placeholder='your@email.com'
                 value={email}
-                onChangeText={(t) => {
-                  setEmail(t)
+                onChangeText={(txt) => {
+                  setEmail(txt)
                   setError(undefined)
                 }}
                 keyboardType='email-address'
                 autoCapitalize='none'
-                outlineColor={error ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.1)'}
-                activeOutlineColor={error ? '#f87171' : colors.primary}
+                autoCorrect={false}
+                editable={!sent}
+                outlineColor={error ? colors.errorBorder : colors.inputOutline}
+                activeOutlineColor={error ? colors.errorText : colors.primary}
                 style={styles.input}
-                placeholderTextColor='rgba(255,255,255,0.2)'
-                theme={INPUT_THEME}
+                placeholderTextColor={colors.textFaint}
+                theme={inputTheme}
               />
 
-              <Pressable
-                onPress={handleSendResetLink}
-                disabled={isLoading}
-                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: 'rgba(34,197,94,0.2)' }, isLoading && { opacity: 0.5 }]}
-              >
-                {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.primaryBtnText}>Send Reset Link</Text>}
-              </Pressable>
+              {!sent ? (
+                <Pressable
+                  onPress={handleSendResetLink}
+                  disabled={isLoading}
+                  style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: colors.primarySoft }, isLoading && { opacity: 0.5 }]}
+                >
+                  {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.primaryBtnText}>{t('auth.sendReset')}</Text>}
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={() => navigation.replace('Login')}
+                  style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: colors.primarySoft }]}
+                >
+                  <Text style={styles.primaryBtnText}>{t('auth.backToLogin')}</Text>
+                </Pressable>
+              )}
 
               <XStack ai='center' gap='$3' my='$4'>
                 <View style={styles.dividerLine} />
@@ -126,9 +146,9 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
               <Pressable
                 onPress={() => navigation.navigate('Login')}
-                style={({ pressed }) => [styles.secondaryBtn, pressed && { borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.05)' }]}
+                style={({ pressed }) => [styles.secondaryBtn, pressed && { borderColor: colors.controlBorder, backgroundColor: colors.controlBg }]}
               >
-                <Text style={styles.secondaryBtnText}>Back to Login</Text>
+                <Text style={styles.secondaryBtnText}>{t('auth.backToLogin')}</Text>
               </Pressable>
             </View>
           </Animated.View>

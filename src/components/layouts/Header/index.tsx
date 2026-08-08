@@ -1,17 +1,33 @@
 import { getAuth } from '@react-native-firebase/auth'
-import React from 'react'
-import { View, Text, Pressable } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { Image, Pressable, Text, View } from 'react-native'
 
-import { styles } from './styles.module'
+import { useAppTheme } from '../../../context/Theme'
+import { useThemedStyles } from '../../../theme'
+
+import { createStyles } from './styles.module'
 
 type HeaderProps = {
   onProfilePress?: () => void
 }
 
 const Header = ({ onProfilePress }: HeaderProps) => {
-  const authInstance = getAuth()
-  const user = authInstance.currentUser
-  const displayName = user?.displayName || 'User'
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
+  const [displayName, setDisplayName] = useState('User')
+  const [photoURL, setPhotoURL] = useState<string | null>(null)
+
+  useEffect(() => {
+    const authInstance = getAuth()
+    const sync = () => {
+      const user = authInstance.currentUser
+      setDisplayName(user?.displayName || 'User')
+      setPhotoURL(user?.photoURL || null)
+    }
+    sync()
+    return authInstance.onAuthStateChanged(sync)
+  }, [])
+
   const initials = displayName
     .split(' ')
     .map((n: string) => n[0])
@@ -26,8 +42,9 @@ const Header = ({ onProfilePress }: HeaderProps) => {
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingTop: 24,
+        paddingTop: 8,
         paddingBottom: 8,
+        backgroundColor: colors.background,
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -36,11 +53,15 @@ const Header = ({ onProfilePress }: HeaderProps) => {
       </View>
       <Pressable
         onPress={onProfilePress}
-        style={({ pressed }) => [styles.profileBtn, pressed && { opacity: 0.7 }]}
+        style={({ pressed }) => [styles.profileBtn, pressed && { opacity: 0.7 }, photoURL ? { overflow: 'hidden', padding: 0 } : null]}
         accessibilityRole='button'
         accessibilityLabel='Go to profile'
       >
-        <Text style={styles.profileInitials}>{initials}</Text>
+        {photoURL ? (
+          <Image source={{ uri: photoURL }} style={{ width: 38, height: 38, borderRadius: 19 }} />
+        ) : (
+          <Text style={styles.profileInitials}>{initials}</Text>
+        )}
       </Pressable>
     </View>
   )

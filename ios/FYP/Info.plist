@@ -35,6 +35,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>146793157600-lasrg844hqen40joe2nshr4s5qm53kh6.apps.googleusercontent.com</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -51,6 +53,12 @@
 
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app requires microphone access for speech recognition.</string>
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs photo library access so you can update your profile picture.</string>
+
+	<key>NSFaceIDUsageDescription</key>
+	<string>Unify Voice uses Face ID to sign you in securely.</string>
 
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app requires location access to provide nearby services.</string>

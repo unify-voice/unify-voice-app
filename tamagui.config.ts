@@ -1,21 +1,30 @@
 import { config } from '@tamagui/config/v3'
 import { createTamagui } from 'tamagui'
 
-import { colors } from './src/theme'
+import { darkColors, lightColors } from './src/theme'
 
 const customConfig = createTamagui({
   ...config,
 
   themes: {
-    ...config.themes, // ✅ keep defaults
+    ...config.themes,
 
     dark: {
-      ...config.themes.dark, // ✅ extend existing dark theme
-      background: colors.background,
-      color: '#ECFDF5',
-      primary: '#0d0d0d',
-      secondary: '#4ADE80',
-      green: colors.primary,
+      ...config.themes.dark,
+      background: darkColors.background,
+      color: darkColors.textPrimary,
+      primary: darkColors.background,
+      secondary: darkColors.successBright,
+      green: darkColors.primary,
+    },
+
+    light: {
+      ...config.themes.light,
+      background: lightColors.background,
+      color: lightColors.textPrimary,
+      primary: lightColors.background,
+      secondary: lightColors.primaryDark,
+      green: lightColors.primary,
     },
   },
 })

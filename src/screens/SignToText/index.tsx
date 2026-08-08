@@ -3,14 +3,16 @@ import React, { useEffect, useRef } from 'react'
 import { Animated, View } from 'react-native'
 
 import Screen from '../../components/layouts/Screen'
+import { useThemedStyles } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
 
 import CameraStep from './components/Camera'
-import { styles } from './styles.module'
+import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignToTextScreen'>
 
 const SignToTextScreen: React.FC<Props> = ({ navigation }) => {
+  const styles = useThemedStyles(createStyles)
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.98)).current
 

@@ -4,8 +4,10 @@ import { ActivityIndicator, Animated, Pressable, StyleSheet, View, Alert } from 
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera'
 import { Text, XStack, YStack } from 'tamagui'
 
-import { API_BASE_URL } from '../../../../config'
-import { styles } from '../styles.module'
+import { API_BASE_URLS } from '../../../../config'
+import { useAppTheme } from '../../../context/Theme'
+import { useThemedStyles } from '../../../theme'
+import { createStyles } from '../styles.module'
 
 // --------------------------------------------------------
 // Types
@@ -19,6 +21,8 @@ type Prediction = {
 // Component
 // --------------------------------------------------------
 const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
   const isFocused = useIsFocused()
   const cameraRef = useRef<Camera>(null)
 
@@ -76,7 +80,7 @@ const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
     try {
       await cameraRef.current.startRecording({
         onRecordingFinished: (video) => {
-          console.log('Recording saved to', video.path)
+          // Video saved; upload continues below
           // Auto‑stop after 3 seconds -> handled by toggleRecording
           uploadVideo(video.path)
         },
@@ -125,7 +129,7 @@ const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
         name: 'sign.mp4',
       })
 
-      const response = await fetch(`${API_BASE_URL}/predict`, {
+      const response = await fetch(`${API_BASE_URLS.signToText}/predict`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -200,7 +204,7 @@ const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
       <View style={styles.outputCard}>
         <Text style={styles.outputLabel}>{isUploading ? 'Analysing…' : 'Detected text'}</Text>
         {isUploading ? (
-          <ActivityIndicator size='small' color='#4ade80' style={{ marginTop: 8 }} />
+          <ActivityIndicator size='small' color={colors.successBright} style={{ marginTop: 8 }} />
         ) : (
           <>
             <Text style={[styles.outputText, !detectedText && { opacity: 0.25 }]}>{detectedText || 'Start signing to see output here…'}</Text>
@@ -212,13 +216,13 @@ const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
                     key={p.word}
                     onPress={() => handleSelectWord(p.word)}
                     style={({ pressed }) => ({
-                      backgroundColor: pressed ? 'rgba(34,197,94,0.3)' : 'rgba(34,197,94,0.15)',
+                      backgroundColor: pressed ? colors.primarySoft : colors.primaryMuted,
                       borderRadius: 100,
                       paddingHorizontal: 14,
                       paddingVertical: 6,
                     })}
                   >
-                    <Text style={{ fontSize: 14, color: '#fff' }}>
+                    <Text style={{ fontSize: 14, color: colors.primary, fontWeight: '600' }}>
                       {i + 1}. {p.word} ({(p.confidence * 100).toFixed(0)}%)
                     </Text>
                   </Pressable>
@@ -236,13 +240,13 @@ const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
             <View style={[styles.recordInner, isRecording && styles.recordInnerActive]} />
           </Pressable>
         </Animated.View>
-        {isRecording && <Text style={{ color: '#ef4444', fontWeight: '600' }}>Recording…</Text>}
-        {isUploading && <Text style={{ color: '#facc15', fontWeight: '600' }}>Uploading…</Text>}
+        {isRecording && <Text style={{ color: colors.errorText, fontWeight: '600' }}>Recording…</Text>}
+        {isUploading && <Text style={{ color: colors.warning, fontWeight: '600' }}>Uploading…</Text>}
       </XStack>
 
       {/* Finish button */}
       <View style={{ paddingHorizontal: 20, paddingBottom: 32 }}>
-        <Pressable onPress={onFinish} style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: 'rgba(34,197,94,0.2)' }]}>
+        <Pressable onPress={onFinish} style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: colors.primarySoft }]}>
           <Text style={styles.primaryBtnText}>Finish</Text>
         </Pressable>
       </View>

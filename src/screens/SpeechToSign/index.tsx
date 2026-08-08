@@ -1,52 +1,162 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect, useRef, useState } from 'react'
+import { CircleStop, HandMetal, Mic, Pause, Play, RefreshCw } from '@tamagui/lucide-icons-2'
+import React, { useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import { PermissionsAndroid, Platform, Animated, Pressable, ScrollView, View, Text as RNText, Image, Modal, StyleSheet } from 'react-native'
 import AudioRecorderPlayer from 'react-native-audio-recorder-player'
 import Video, { type VideoRef } from 'react-native-video'
 import { Text, XStack, YStack } from 'tamagui'
 
-import { API_BASE_URL } from '../../../config'
+import { API_BASE_URLS } from '../../../config'
 import defaultAvatar from '../../assets/speech-to-sign-avatar.png'
 import Screen from '../../components/layouts/Screen'
+import { useAppTheme } from '../../context/Theme'
+import { useThemedStyles, type ThemeColors } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
 
-import { styles } from './styles.modules'
+import { createStyles } from './styles.modules'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SpeechToSignScreen'>
+type IconComponent = ComponentType<{ size?: number; color?: string }>
 
 const audioRecorderPlayer = new AudioRecorderPlayer()
 
-const GREEN = '#22c55e'
-const BLUE = '#3b82f6'
-const CARD_BG = '#1e293b'
-const BORDER = '#334155'
-
 // ── Guide steps ──────────────────────────────────────────────────────────────
-const GUIDE_STEPS = [
+const GUIDE_STEPS: { Icon: IconComponent; title: string; body: string }[] = [
   {
-    icon: '🎙️',
+    Icon: Mic,
     title: 'Tap to speak',
     body: 'Press the microphone button and say a phrase — in English or Urdu. The button pulses while it listens.',
   },
   {
-    icon: '⏹️',
+    Icon: CircleStop,
     title: 'Tap again to stop',
     body: 'Tap the mic a second time to finish recording. Your audio is sent for transcription automatically.',
   },
   {
-    icon: '🤟',
+    Icon: HandMetal,
     title: 'Watch the sign',
-    body: 'If a matching sign exists, the video plays instantly. Use ▶️ / ⏸️ to control it, or replay once it ends.',
+    body: 'If a matching sign exists, the video plays instantly. Use play / pause to control it, or replay once it ends.',
   },
   {
-    icon: '🔄',
+    Icon: RefreshCw,
     title: 'Try again',
     body: 'Tap Clear to reset and record a new phrase. Supported phrases are shown in both English and Urdu.',
   },
 ]
 
+const createGuideStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: c.overlayStrong,
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: c.slate,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
+      paddingHorizontal: 24,
+      paddingTop: 20,
+      paddingBottom: 36,
+      borderTopWidth: 1,
+      borderColor: c.slateBorder,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    headerLabel: {
+      color: c.slateTextMuted,
+      fontSize: 13,
+      fontWeight: '600',
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+    },
+    skipBtn: {
+      color: c.slateTextMuted,
+      fontSize: 14,
+    },
+    dot: {
+      height: 6,
+      borderRadius: 3,
+    },
+    dotActive: {
+      width: 24,
+      backgroundColor: c.primary,
+    },
+    dotInactive: {
+      width: 6,
+      backgroundColor: c.slateBorder,
+    },
+    stepContent: {
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      minHeight: 210,
+    },
+    iconBubble: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: c.slateMuted,
+      borderWidth: 2,
+      borderColor: c.slateBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+    },
+    stepTitle: {
+      color: c.slateText,
+      fontSize: 22,
+      fontWeight: '700',
+      textAlign: 'center',
+      marginBottom: 10,
+      letterSpacing: -0.3,
+    },
+    stepBody: {
+      color: c.slateTextMuted,
+      fontSize: 15,
+      lineHeight: 22,
+      textAlign: 'center',
+    },
+    counter: {
+      color: c.slateTextMuted,
+      fontSize: 12,
+      textAlign: 'center',
+      marginTop: 18,
+    },
+    btn: {
+      flex: 1,
+      height: 50,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnPrimary: {
+      backgroundColor: c.primary,
+    },
+    btnPrimaryText: {
+      color: c.black,
+      fontSize: 15,
+      fontWeight: '700',
+    },
+    btnSecondary: {
+      backgroundColor: c.slate,
+      borderWidth: 1,
+      borderColor: c.slateBorder,
+    },
+    btnSecondaryText: {
+      color: c.slateTextMuted,
+      fontSize: 15,
+      fontWeight: '600',
+    },
+  })
+
 // ── Onboarding modal ─────────────────────────────────────────────────────────
 const GuideModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
+  const { colors } = useAppTheme()
+  const guide = useMemo(() => createGuideStyles(colors), [colors])
   const [step, setStep] = useState(0)
   const slideAnim = useRef(new Animated.Value(0)).current
   const fadeAnim = useRef(new Animated.Value(1)).current
@@ -100,7 +210,7 @@ const GuideModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visib
           <Animated.View style={[guide.stepContent, { opacity: fadeAnim, transform: [{ translateX: slideAnim }] }]}>
             {/* Icon bubble */}
             <View style={guide.iconBubble}>
-              <RNText style={guide.iconText}>{current.icon}</RNText>
+              <current.Icon size={38} color={colors.primary} />
             </View>
 
             <RNText style={guide.stepTitle}>{current.title}</RNText>
@@ -132,120 +242,10 @@ const GuideModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visib
   )
 }
 
-// ── Guide styles ──────────────────────────────────────────────────────────────
-const guide = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: CARD_BG,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 36,
-    borderTopWidth: 1,
-    borderColor: BORDER,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerLabel: {
-    color: '#94a3b8',
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  skipBtn: {
-    color: '#64748b',
-    fontSize: 14,
-  },
-  dot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  dotActive: {
-    width: 24,
-    backgroundColor: GREEN,
-  },
-  dotInactive: {
-    width: 6,
-    backgroundColor: BORDER,
-  },
-  stepContent: {
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    minHeight: 210,
-  },
-  iconBubble: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#0f172a',
-    borderWidth: 2,
-    borderColor: BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  iconText: {
-    fontSize: 38,
-  },
-  stepTitle: {
-    color: '#f1f5f9',
-    fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 10,
-    letterSpacing: -0.3,
-  },
-  stepBody: {
-    color: '#94a3b8',
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  counter: {
-    color: '#475569',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 18,
-  },
-  btn: {
-    flex: 1,
-    height: 50,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnPrimary: {
-    backgroundColor: GREEN,
-  },
-  btnPrimaryText: {
-    color: '#000',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  btnSecondary: {
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  btnSecondaryText: {
-    color: '#94a3b8',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-})
-
 // ── Main screen ───────────────────────────────────────────────────────────────
 const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
   const [isListening, setIsListening] = useState(false)
   const [spokenText, setSpokenText] = useState('')
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
@@ -321,19 +321,22 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
         type: 'audio/m4a',
       } as any)
 
-      const res = await fetch(`${API_BASE_URL}/transcribe`, { method: 'POST', body: formData })
+      const res = await fetch(`${API_BASE_URLS.speechToSign}/transcribe`, { method: 'POST', body: formData })
       const data = await res.json()
 
-      setSpokenText(data.text || '')
+      const displayText = data?.detected_language === 'ur' ? data?.roman_urdu : data?.text
+
+      setSpokenText(displayText || '')
+
       if (data.found && data.video) {
-        setVideoUrl(`${API_BASE_URL}${data.video}`)
+        setVideoUrl(`${API_BASE_URLS.speechToSign}${data.video}`)
         setIsPaused(false)
         setVideoEnded(false)
       } else {
         setMessage(data.message || 'Sign does not exist for this sentence')
       }
-    } catch (e) {
-      console.log('Error:', e)
+    } catch {
+      // Request failed — surface message below
       setMessage('Something went wrong')
     } finally {
       setIsUploading(false)
@@ -370,9 +373,8 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
   }
 
   const micDisabled = isUploading || videoReady
-  const playPauseIcon = isPaused ? '▶️' : '⏸️'
-  const playPauseBg = isPaused ? '#1e40af' : '#15803d'
-  const playPauseBorder = isPaused ? BLUE : GREEN
+  const playPauseBg = isPaused ? colors.accentBlueDark : colors.playGreen
+  const playPauseBorder = isPaused ? colors.accentBlue : colors.primary
 
   const statusLabel = isListening
     ? 'Listening… tap to stop'
@@ -380,7 +382,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
       ? 'Processing…'
       : videoReady
         ? videoEnded
-          ? 'Tap ▶️ to replay'
+          ? 'Tap play to replay'
           : isPaused
             ? 'Paused'
             : 'Playing'
@@ -408,14 +410,14 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                 width: 32,
                 height: 32,
                 borderRadius: 16,
-                backgroundColor: CARD_BG,
+                backgroundColor: colors.slate,
                 borderWidth: 1,
-                borderColor: BORDER,
+                borderColor: colors.slateBorder,
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
-              <RNText style={{ color: '#94a3b8', fontSize: 15, fontWeight: '700' }}>?</RNText>
+              <RNText style={{ color: colors.slateTextMuted, fontSize: 15, fontWeight: '700' }}>?</RNText>
             </Pressable>
           </XStack>
         </YStack>
@@ -446,7 +448,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
           {message ? (
             <View style={styles.spokenCard}>
               <Text style={styles.spokenLabel}>Result</Text>
-              <RNText style={{ color: 'white', marginTop: 10 }}>{message}</RNText>
+              <RNText style={{ color: colors.textPrimary, marginTop: 10 }}>{message}</RNText>
             </View>
           ) : null}
 
@@ -458,7 +460,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                   <Text style={styles.clearBtn}>Clear</Text>
                 </Pressable>
               </XStack>
-              <RNText style={{ color: 'white', marginTop: 10 }}>{spokenText}</RNText>
+              <RNText style={{ color: colors.textPrimary, marginTop: 10 }}>{spokenText}</RNText>
             </View>
           ) : null}
 
@@ -471,7 +473,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                   disabled={micDisabled}
                   style={[styles.micBtn, isListening && styles.micBtnActive, micDisabled && { opacity: 0.35 }]}
                 >
-                  <RNText style={{ fontSize: 28 }}>🎙️</RNText>
+                  <Mic size={28} color={colors.primary} />
                 </Pressable>
               </Animated.View>
 
@@ -482,13 +484,13 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                     disabled={!videoReady}
                     style={[styles.micBtn, { backgroundColor: playPauseBg, borderColor: playPauseBorder }]}
                   >
-                    <RNText style={{ fontSize: 28 }}>{playPauseIcon}</RNText>
+                    {isPaused ? <Play size={28} color={colors.white} /> : <Pause size={28} color={colors.white} />}
                   </Pressable>
                 </Animated.View>
               ) : null}
             </XStack>
 
-            <Text style={[styles.micLabel, isListening && { color: GREEN }]}>{statusLabel}</Text>
+            <Text style={[styles.micLabel, isListening && { color: colors.primary }]}>{statusLabel}</Text>
           </View>
         </ScrollView>
 

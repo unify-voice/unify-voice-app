@@ -1,33 +1,52 @@
-import auth, { getAuth, updateEmail, updatePassword, updateProfile } from '@react-native-firebase/auth'
-// import storage from '@react-native-firebase/storage'
+import { EmailAuthProvider, getAuth, updatePassword, updateProfile, verifyBeforeUpdateEmail } from '@react-native-firebase/auth'
+import storage from '@react-native-firebase/storage'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import { CompositeScreenProps } from '@react-navigation/native'
+import { CommonActions, CompositeScreenProps } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Eye, EyeOff } from '@tamagui/lucide-icons-2'
+import { Eye, EyeOff, Fingerprint, Info, Languages, Lock, LogOut, Mail, Moon, Pencil, ScanFace, Sun, Trash2, User } from '@tamagui/lucide-icons-2'
 import React, { useEffect, useRef, useState } from 'react'
-import { Alert, Animated, Pressable, ScrollView } from 'react-native'
+import { Alert, Animated, Image, Platform, Pressable, ScrollView } from 'react-native'
 import * as ImagePicker from 'react-native-image-picker'
 import { TextInput } from 'react-native-paper'
 import { Text, View, YStack } from 'tamagui'
 
+import { signInWithGoogle, signOutGoogle } from '../../../../config/googleAuth'
+import { useLanguage } from '../../../../context/Language'
 import { useLoader } from '../../../../context/Loader'
-import { colors, INPUT_THEME } from '../../../../theme'
+import { useAppTheme } from '../../../../context/Theme'
+import type { AppLanguage } from '../../../../i18n/translations'
+import {
+  clearBiometricCredentials,
+  getBiometryKind,
+  getBiometryLabel,
+  isBiometryAvailable,
+  isBiometricsEnabled,
+  saveBiometricCredentials,
+} from '../../../../services/biometrics'
+import { useThemedStyles } from '../../../../theme'
 import { RootStackParamList } from '../../../../types/navigation'
 import { TabParamList } from '../../../../types/tabs'
+import { mapAuthError } from '../../../../utils/authErrors'
 
 import EditModal from './components/EditModal'
 import SettingRow from './components/SettingRow'
-import { styles } from './styles.module'
+import { createStyles } from './styles.module'
 
 type Props = CompositeScreenProps<BottomTabScreenProps<TabParamList, 'ProfileScreen'>, NativeStackScreenProps<RootStackParamList>>
 
+type ModalType = 'name' | 'email' | 'password' | 'language' | 'biometric' | null
+
 const ProfileScreen = ({ navigation }: Props) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors, inputTheme, isDark, toggleDark } = useAppTheme()
+  const { language, setLanguage, t } = useLanguage()
+  const { show, hide } = useLoader()
+
   const authInstance = getAuth()
   const user = authInstance.currentUser
 
-  const { show, hide } = useLoader()
   const [displayName, setDisplayName] = useState(user?.displayName || '')
-  const [avatarUri, setAvatarUri] = useState<string | null>(user?.photoURL || '')
+  const [avatarUri, setAvatarUri] = useState<string | null>(user?.photoURL || null)
   const [activeModal, setActiveModal] = useState<ModalType>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [modalError, setModalError] = useState('')
@@ -40,6 +59,17 @@ const ProfileScreen = ({ navigation }: Props) => {
   const [showCur, setShowCur] = useState(false)
   const [showNew, setShowNew] = useState(false)
   const [showCon, setShowCon] = useState(false)
+  const [draftLanguage, setDraftLanguage] = useState<AppLanguage>(language)
+  const [biometricPassword, setBiometricPassword] = useState('')
+  const [showBioPass, setShowBioPass] = useState(false)
+  const [deletePasswordVisible, setDeletePasswordVisible] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [showDeletePass, setShowDeletePass] = useState(false)
+
+  const [biometryAvailable, setBiometryAvailable] = useState(false)
+  const [biometryLabel, setBiometryLabel] = useState('Biometrics')
+  const [biometryKind, setBiometryKind] = useState<'face' | 'fingerprint' | 'iris' | 'none'>('none')
+  const [biometricsOn, setBiometricsOn] = useState(false)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(12)).current
@@ -51,7 +81,22 @@ const ProfileScreen = ({ navigation }: Props) => {
     ]).start()
   }, [fadeAnim, slideAnim])
 
-  if (!user) return null
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      const [available, label, kind, enabled] = await Promise.all([isBiometryAvailable(), getBiometryLabel(), getBiometryKind(), isBiometricsEnabled()])
+      if (!mounted) return
+      setBiometryAvailable(available)
+      setBiometryLabel(label)
+      setBiometryKind(kind)
+      setBiometricsOn(enabled)
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const hasPasswordProvider = !!user?.providerData.some((p) => p.providerId === 'password')
 
   const initials =
     displayName
@@ -64,20 +109,43 @@ const ProfileScreen = ({ navigation }: Props) => {
   const openModal = (type: ModalType) => {
     setModalError('')
     if (type === 'name') setNewName(displayName)
-    if (type === 'email') setNewEmail('')
+    if (type === 'email') {
+      setNewEmail('')
+      setCurrentPassword('')
+      setShowCur(false)
+    }
     if (type === 'password') {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+      setShowCur(false)
+      setShowNew(false)
+      setShowCon(false)
+    }
+    if (type === 'language') setDraftLanguage(language)
+    if (type === 'biometric') {
+      setBiometricPassword('')
+      setShowBioPass(false)
     }
     setActiveModal(type)
   }
+
   const closeModal = () => {
     setActiveModal(null)
     setModalError('')
   }
 
+  const resetToLogin = () => {
+    navigation.dispatch(
+      CommonActions.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      }),
+    )
+  }
+
   const handlePickAvatar = async () => {
+    if (!user) return
     try {
       const result = await ImagePicker.launchImageLibrary({
         mediaType: 'photo',
@@ -86,9 +154,7 @@ const ProfileScreen = ({ navigation }: Props) => {
         quality: 0.8,
       })
 
-      if (!result.assets || result.assets.length === 0) {
-        return
-      }
+      if (!result.assets || result.assets.length === 0) return
 
       const uri = result.assets[0].uri
       if (!uri) {
@@ -97,21 +163,26 @@ const ProfileScreen = ({ navigation }: Props) => {
       }
 
       setAvatarUri(uri)
-
-      // try {
-      //   const ref = storage().ref(`avatars/${user.uid}.jpg`)
-      //   await ref.putFile(uri)
-      //   const url = await ref.getDownloadURL()
-      //   await updateProfile(user, { photoURL: url })
-      // } catch {
-      //   Alert.alert('Upload failed', 'Could not upload photo. Try again.')
-      // }
+      show()
+      try {
+        const uploadPath = Platform.OS === 'ios' ? uri.replace('file://', '') : uri
+        const ref = storage().ref(`avatars/${user.uid}.jpg`)
+        await ref.putFile(uploadPath)
+        const url = await ref.getDownloadURL()
+        await updateProfile(user, { photoURL: url })
+        setAvatarUri(url)
+      } catch {
+        Alert.alert('Upload failed', 'Could not upload photo. Try again.')
+      } finally {
+        hide()
+      }
     } catch (err) {
       Alert.alert('Permission needed', `Please allow photo access to update your avatar in your device settings. ${err}`)
     }
   }
 
   const handleSaveName = async () => {
+    if (!user) return
     if (!newName.trim()) {
       setModalError('Name cannot be empty.')
       return
@@ -121,14 +192,19 @@ const ProfileScreen = ({ navigation }: Props) => {
       await updateProfile(user, { displayName: newName.trim() })
       setDisplayName(newName.trim())
       closeModal()
-    } catch {
-      setModalError('Failed to update name. Try again.')
+    } catch (err: any) {
+      setModalError(mapAuthError(err?.code, 'Failed to update name. Try again.'))
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleSaveEmail = async () => {
+    if (!user) return
+    if (!hasPasswordProvider) {
+      setModalError('Email cannot be changed for Google sign-in accounts this way.')
+      return
+    }
     if (!newEmail.trim()) {
       setModalError('Email cannot be empty.')
       return
@@ -137,19 +213,34 @@ const ProfileScreen = ({ navigation }: Props) => {
       setModalError('Enter a valid email.')
       return
     }
+    if (!currentPassword) {
+      setModalError('Current password is required.')
+      return
+    }
+    if (!user.email) {
+      setModalError('No email on this account.')
+      return
+    }
     setIsLoading(true)
     try {
-      await updateEmail(user, newEmail.trim())
+      const cred = EmailAuthProvider.credential(user.email, currentPassword)
+      await user.reauthenticateWithCredential(cred)
+      await verifyBeforeUpdateEmail(user, newEmail.trim())
       closeModal()
-      Alert.alert('Email updated', 'A verification link was sent to your new address.')
+      Alert.alert('Verification sent', 'A verification link was sent to your new address. Confirm it to finish updating your email.')
     } catch (err: any) {
-      setModalError(err.code === 'auth/requires-recent-login' ? 'Please re-login and try again.' : 'Failed to update email.')
+      setModalError(mapAuthError(err?.code, 'Failed to update email.'))
     } finally {
       setIsLoading(false)
     }
   }
 
   const handleSavePassword = async () => {
+    if (!user) return
+    if (!hasPasswordProvider) {
+      setModalError('Password cannot be changed for Google sign-in accounts.')
+      return
+    }
     if (!currentPassword || !newPassword || !confirmPassword) {
       setModalError('All fields are required.')
       return
@@ -162,18 +253,136 @@ const ProfileScreen = ({ navigation }: Props) => {
       setModalError('Password must be at least 6 characters.')
       return
     }
+    if (!user.email) {
+      setModalError('No email on this account.')
+      return
+    }
     setIsLoading(true)
     try {
-      const cred = auth.EmailAuthProvider.credential(user.email!, currentPassword)
+      const cred = EmailAuthProvider.credential(user.email, currentPassword)
       await user.reauthenticateWithCredential(cred)
       await updatePassword(user, newPassword)
       closeModal()
       Alert.alert('Password updated', 'Your password has been changed successfully.')
     } catch (err: any) {
-      setModalError(err.code === 'auth/wrong-password' ? 'Current password is incorrect.' : 'Failed to update password.')
+      setModalError(mapAuthError(err?.code, 'Failed to update password.'))
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSaveLanguage = async () => {
+    setIsLoading(true)
+    try {
+      await setLanguage(draftLanguage)
+      closeModal()
+    } catch {
+      setModalError('Failed to update language.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const enableBiometricsWithPassword = async (password: string) => {
+    if (!user?.email) {
+      throw Object.assign(new Error('No email on this account.'), { code: 'auth/invalid-email' })
+    }
+    if (!password) {
+      throw Object.assign(new Error('Password required'), { code: 'auth/wrong-password' })
+    }
+    const cred = EmailAuthProvider.credential(user.email, password)
+    await user.reauthenticateWithCredential(cred)
+    await saveBiometricCredentials(user.email, password)
+    setBiometricsOn(true)
+  }
+
+  const handleToggleBiometrics = () => {
+    if (!hasPasswordProvider) {
+      Alert.alert('Unavailable', 'Biometric sign-in requires an email/password account.')
+      return
+    }
+    if (biometricsOn) {
+      Alert.alert(`Disable ${biometryLabel}?`, 'You will need your password to sign in next time.', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disable',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await clearBiometricCredentials()
+              setBiometricsOn(false)
+            } catch {
+              Alert.alert('Error', 'Could not disable biometrics.')
+            }
+          },
+        },
+      ])
+      return
+    }
+
+    if (Platform.OS === 'ios' && typeof Alert.prompt === 'function') {
+      Alert.prompt(
+        `Enable ${biometryLabel}`,
+        'Enter your account password to save credentials securely.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Enable',
+            onPress: (password?: string) => {
+              void (async () => {
+                try {
+                  show()
+                  await enableBiometricsWithPassword(password || '')
+                  Alert.alert('Enabled', `${biometryLabel} sign-in is now on.`)
+                } catch (err: any) {
+                  Alert.alert('Error', mapAuthError(err?.code, err?.message || 'Could not enable biometrics.'))
+                } finally {
+                  hide()
+                }
+              })()
+            },
+          },
+        ],
+        'secure-text',
+      )
+      return
+    }
+
+    openModal('biometric')
+  }
+
+  const handleSaveBiometric = async () => {
+    if (!biometricPassword) {
+      setModalError('Password is required.')
+      return
+    }
+    setIsLoading(true)
+    setModalError('')
+    try {
+      await enableBiometricsWithPassword(biometricPassword)
+      closeModal()
+      Alert.alert('Enabled', `${biometryLabel} sign-in is now on.`)
+    } catch (err: any) {
+      setModalError(mapAuthError(err?.code, err?.message || 'Could not enable biometrics.'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEmailPress = () => {
+    if (!hasPasswordProvider) {
+      Alert.alert('Unavailable', 'Email cannot be changed for Google sign-in accounts this way.')
+      return
+    }
+    openModal('email')
+  }
+
+  const handlePasswordPress = () => {
+    if (!hasPasswordProvider) {
+      Alert.alert('Unavailable', 'Password cannot be changed for Google sign-in accounts.')
+      return
+    }
+    openModal('password')
   }
 
   const handleLogout = () => {
@@ -185,10 +394,10 @@ const ProfileScreen = ({ navigation }: Props) => {
         onPress: async () => {
           try {
             show()
-
+            // Keep biometric credentials so Face ID / fingerprint login still works.
+            await signOutGoogle()
             await authInstance.signOut()
-
-            navigation.replace('Login')
+            resetToLogin()
           } catch (err: any) {
             Alert.alert('Error', err?.message || 'Logout failed.')
           } finally {
@@ -199,27 +408,115 @@ const ProfileScreen = ({ navigation }: Props) => {
     ])
   }
 
+  const performDeleteAccount = async () => {
+    const current = authInstance.currentUser
+    if (!current) return
+    try {
+      show()
+      await current.delete()
+      await clearBiometricCredentials()
+      await signOutGoogle()
+      resetToLogin()
+    } catch (err: any) {
+      Alert.alert('Error', mapAuthError(err?.code, 'Failed to delete account.'))
+    } finally {
+      hide()
+    }
+  }
+
+  const deleteWithPassword = async (password: string) => {
+    const current = authInstance.currentUser
+    if (!current?.email) {
+      throw Object.assign(new Error('No email on this account.'), { code: 'auth/invalid-email' })
+    }
+    if (!password) {
+      throw Object.assign(new Error('Password is required.'), { code: 'auth/wrong-password' })
+    }
+    const cred = EmailAuthProvider.credential(current.email, password)
+    await current.reauthenticateWithCredential(cred)
+    await current.delete()
+    await clearBiometricCredentials()
+    await signOutGoogle()
+    setDeletePasswordVisible(false)
+    resetToLogin()
+  }
+
   const handleDeleteAccount = () => {
     Alert.alert('Delete Account', 'This will permanently delete your account and all data. This cannot be undone.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            await user.delete()
-            navigation.replace('Login')
-          } catch (err: any) {
-            if (err.code === 'auth/requires-recent-login') {
-              Alert.alert('Re-login required', 'Please log out and log back in to delete your account.')
+        onPress: () => {
+          if (hasPasswordProvider) {
+            if (Platform.OS === 'ios' && typeof Alert.prompt === 'function') {
+              Alert.prompt(
+                'Confirm password',
+                'Enter your password to permanently delete your account.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: (password?: string) => {
+                      void (async () => {
+                        try {
+                          show()
+                          await deleteWithPassword(password || '')
+                        } catch (err: any) {
+                          Alert.alert('Error', mapAuthError(err?.code, err?.message || 'Failed to delete account.'))
+                        } finally {
+                          hide()
+                        }
+                      })()
+                    },
+                  },
+                ],
+                'secure-text',
+              )
             } else {
-              Alert.alert('Error', 'Failed to delete account.')
+              setDeletePassword('')
+              setShowDeletePass(false)
+              setModalError('')
+              setDeletePasswordVisible(true)
             }
+            return
           }
+
+          void (async () => {
+            try {
+              show()
+              await signInWithGoogle()
+              await performDeleteAccount()
+            } catch (err: any) {
+              Alert.alert('Error', mapAuthError(err?.code, err?.message || 'Google re-authentication failed.'))
+              hide()
+            }
+          })()
         },
       },
     ])
   }
+
+  const handleSaveDeletePassword = async () => {
+    if (!deletePassword) {
+      setModalError('Password is required.')
+      return
+    }
+    setIsLoading(true)
+    setModalError('')
+    try {
+      await deleteWithPassword(deletePassword)
+    } catch (err: any) {
+      setModalError(mapAuthError(err?.code, err?.message || 'Failed to delete account.'))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (!user) return null
+
+  const BiometricIcon = biometryKind === 'face' ? ScanFace : Fingerprint
 
   return (
     <>
@@ -231,7 +528,7 @@ const ProfileScreen = ({ navigation }: Props) => {
             <View style={styles.avatarWrap}>
               {avatarUri ? (
                 <View style={[styles.avatarCircle, { overflow: 'hidden' }]}>
-                  <Text style={styles.avatarInitials}>{initials}</Text>
+                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
                 </View>
               ) : (
                 <View style={styles.avatarCircle}>
@@ -239,36 +536,81 @@ const ProfileScreen = ({ navigation }: Props) => {
                 </View>
               )}
               <Pressable style={styles.avatarEditBtn} onPress={handlePickAvatar}>
-                <Text style={{ fontSize: 12, color: '#0d0d0d' }}>✎</Text>
+                <Pencil size={12} color={colors.textOnPrimary} />
               </Pressable>
             </View>
             <Text style={styles.avatarName}>{displayName || 'User'}</Text>
             <Text style={styles.avatarEmail}>{user.email}</Text>
           </YStack>
 
-          <Text style={styles.sectionLabel}>Account</Text>
+          <Text style={styles.sectionLabel}>{t('profile.account')}</Text>
           <View style={styles.groupCard}>
-            <SettingRow icon='👤' title='Full Name' subtitle={displayName || 'Not set'} onPress={() => openModal('name')} />
-            <SettingRow icon='✉️' title='Email Address' subtitle={user.email || ''} onPress={() => openModal('email')} />
-            <SettingRow icon='🔑' title='Change Password' subtitle='Last changed 30 days ago' onPress={() => openModal('password')} noBorder />
+            <SettingRow
+              icon={<User size={17} color={colors.primary} />}
+              title={t('profile.fullName')}
+              subtitle={displayName || t('profile.notSet')}
+              onPress={() => openModal('name')}
+            />
+            <SettingRow icon={<Mail size={17} color={colors.primary} />} title={t('profile.email')} subtitle={user.email || ''} onPress={handleEmailPress} />
+            <SettingRow
+              icon={<Lock size={17} color={colors.primary} />}
+              title={t('profile.changePassword')}
+              subtitle='Update your account password'
+              onPress={handlePasswordPress}
+              noBorder
+            />
           </View>
 
-          <Text style={styles.sectionLabel}>Preferences</Text>
+          <Text style={styles.sectionLabel}>{t('profile.preferences')}</Text>
           <View style={styles.groupCard}>
-            <SettingRow icon='🌐' title='Language' subtitle='English, Urdu' onPress={() => openModal('language')} />
-
-            <SettingRow icon='🌙' title='Dark Mode' subtitle='Always on' badge='On' noBorder />
+            <SettingRow
+              icon={<Languages size={17} color={colors.primary} />}
+              title={t('profile.language')}
+              subtitle={language === 'ur' ? t('lang.urdu') : t('lang.english')}
+              onPress={() => openModal('language')}
+            />
+            <SettingRow
+              icon={isDark ? <Moon size={17} color={colors.primary} /> : <Sun size={17} color={colors.primary} />}
+              title={t('profile.darkMode')}
+              subtitle={isDark ? t('profile.on') : t('profile.off')}
+              badge={isDark ? t('profile.on') : t('profile.off')}
+              onPress={toggleDark}
+              noBorder={!biometryAvailable}
+            />
+            {biometryAvailable ? (
+              <SettingRow
+                icon={<BiometricIcon size={17} color={colors.primary} />}
+                title={t('profile.biometrics')}
+                subtitle={biometryLabel}
+                badge={biometricsOn ? t('profile.on') : t('profile.off')}
+                onPress={handleToggleBiometrics}
+                noBorder
+              />
+            ) : null}
           </View>
 
-          <Text style={styles.sectionLabel}>About</Text>
+          <Text style={styles.sectionLabel}>{t('profile.about')}</Text>
           <View style={styles.groupCard}>
-            <SettingRow icon='ℹ️' title='App Version' subtitle='v1.0.0 (build 42)' />
+            <SettingRow icon={<Info size={17} color={colors.primary} />} title={t('profile.version')} subtitle='v1.0.0 (build 42)' />
           </View>
 
-          <Text style={styles.sectionLabel}>Account actions</Text>
+          <Text style={styles.sectionLabel}>{t('profile.actions')}</Text>
           <View style={styles.groupCard}>
-            <SettingRow icon='🚪' title='Log Out' subtitle='Sign out of your account' danger onPress={handleLogout} />
-            <SettingRow icon='🗑️' title='Delete Account' subtitle='Permanently remove your data' danger onPress={handleDeleteAccount} noBorder />
+            <SettingRow
+              icon={<LogOut size={17} color={colors.errorText} />}
+              title={t('profile.logOut')}
+              subtitle='Sign out of your account'
+              danger
+              onPress={handleLogout}
+            />
+            <SettingRow
+              icon={<Trash2 size={17} color={colors.errorText} />}
+              title={t('profile.deleteAccount')}
+              subtitle='Permanently remove your data'
+              danger
+              onPress={handleDeleteAccount}
+              noBorder
+            />
           </View>
         </ScrollView>
       </Animated.View>
@@ -292,18 +634,18 @@ const ProfileScreen = ({ navigation }: Props) => {
           placeholder='John Doe'
           value={newName}
           onChangeText={setNewName}
-          outlineColor='rgba(255,255,255,0.1)'
+          outlineColor={colors.inputOutline}
           activeOutlineColor={colors.primary}
           style={styles.modalInput}
-          placeholderTextColor='rgba(255,255,255,0.2)'
-          theme={INPUT_THEME}
+          placeholderTextColor={colors.textFaint}
+          theme={inputTheme}
         />
       </EditModal>
 
       <EditModal
         visible={activeModal === 'email'}
         title='Update email'
-        subtitle='A verification link will be sent to your new address.'
+        subtitle='Re-enter your password, then we will send a verification link to the new address.'
         onClose={closeModal}
         onSave={handleSaveEmail}
         isLoading={isLoading}
@@ -313,7 +655,23 @@ const ProfileScreen = ({ navigation }: Props) => {
             <Text style={styles.modalErrText}>{modalError}</Text>
           </View>
         ) : null}
-        <Text style={styles.modalLabel}>New Email</Text>
+        <Text style={styles.modalLabel}>Current Password</Text>
+        <TextInput
+          mode='outlined'
+          placeholder='••••••••'
+          value={currentPassword}
+          onChangeText={setCurrentPassword}
+          secureTextEntry={!showCur}
+          right={
+            <TextInput.Icon icon={() => (showCur ? <EyeOff size={18} /> : <Eye size={18} />)} color={colors.textMuted} onPress={() => setShowCur((v) => !v)} />
+          }
+          outlineColor={colors.inputOutline}
+          activeOutlineColor={colors.primary}
+          style={styles.modalInput}
+          placeholderTextColor={colors.textFaint}
+          theme={inputTheme}
+        />
+        <Text style={[styles.modalLabel, { marginTop: 8 }]}>New Email</Text>
         <TextInput
           mode='outlined'
           placeholder='new@email.com'
@@ -321,11 +679,11 @@ const ProfileScreen = ({ navigation }: Props) => {
           onChangeText={setNewEmail}
           keyboardType='email-address'
           autoCapitalize='none'
-          outlineColor='rgba(255,255,255,0.1)'
+          outlineColor={colors.inputOutline}
           activeOutlineColor={colors.primary}
           style={styles.modalInput}
-          placeholderTextColor='rgba(255,255,255,0.2)'
-          theme={INPUT_THEME}
+          placeholderTextColor={colors.textFaint}
+          theme={inputTheme}
         />
       </EditModal>
 
@@ -350,17 +708,13 @@ const ProfileScreen = ({ navigation }: Props) => {
           onChangeText={setCurrentPassword}
           secureTextEntry={!showCur}
           right={
-            <TextInput.Icon
-              icon={() => (showCur ? <EyeOff size={18} /> : <Eye size={18} />)}
-              color='rgba(255,255,255,0.3)'
-              onPress={() => setShowCur((v) => !v)}
-            />
+            <TextInput.Icon icon={() => (showCur ? <EyeOff size={18} /> : <Eye size={18} />)} color={colors.textMuted} onPress={() => setShowCur((v) => !v)} />
           }
-          outlineColor='rgba(255,255,255,0.1)'
+          outlineColor={colors.inputOutline}
           activeOutlineColor={colors.primary}
           style={styles.modalInput}
-          placeholderTextColor='rgba(255,255,255,0.2)'
-          theme={INPUT_THEME}
+          placeholderTextColor={colors.textFaint}
+          theme={inputTheme}
         />
         <Text style={[styles.modalLabel, { marginTop: 8 }]}>New Password</Text>
         <TextInput
@@ -370,17 +724,13 @@ const ProfileScreen = ({ navigation }: Props) => {
           onChangeText={setNewPassword}
           secureTextEntry={!showNew}
           right={
-            <TextInput.Icon
-              icon={() => (showNew ? <EyeOff size={18} /> : <Eye size={18} />)}
-              color='rgba(255,255,255,0.3)'
-              onPress={() => setShowNew((v) => !v)}
-            />
+            <TextInput.Icon icon={() => (showNew ? <EyeOff size={18} /> : <Eye size={18} />)} color={colors.textMuted} onPress={() => setShowNew((v) => !v)} />
           }
-          outlineColor='rgba(255,255,255,0.1)'
+          outlineColor={colors.inputOutline}
           activeOutlineColor={colors.primary}
           style={styles.modalInput}
-          placeholderTextColor='rgba(255,255,255,0.2)'
-          theme={INPUT_THEME}
+          placeholderTextColor={colors.textFaint}
+          theme={inputTheme}
         />
         <Text style={[styles.modalLabel, { marginTop: 8 }]}>Confirm Password</Text>
         <TextInput
@@ -390,43 +740,113 @@ const ProfileScreen = ({ navigation }: Props) => {
           onChangeText={setConfirmPassword}
           secureTextEntry={!showCon}
           right={
-            <TextInput.Icon
-              icon={() => (showCon ? <EyeOff size={18} /> : <Eye size={18} />)}
-              color='rgba(255,255,255,0.3)'
-              onPress={() => setShowCon((v) => !v)}
-            />
+            <TextInput.Icon icon={() => (showCon ? <EyeOff size={18} /> : <Eye size={18} />)} color={colors.textMuted} onPress={() => setShowCon((v) => !v)} />
           }
-          outlineColor='rgba(255,255,255,0.1)'
+          outlineColor={colors.inputOutline}
           activeOutlineColor={colors.primary}
           style={styles.modalInput}
-          placeholderTextColor='rgba(255,255,255,0.2)'
-          theme={INPUT_THEME}
+          placeholderTextColor={colors.textFaint}
+          theme={inputTheme}
         />
       </EditModal>
 
       <EditModal
         visible={activeModal === 'language'}
-        title='Language'
-        subtitle='Select your preferred communication languages.'
+        title={t('lang.title')}
+        subtitle={t('lang.subtitle')}
         onClose={closeModal}
-        onSave={closeModal}
-        isLoading={false}
+        onSave={handleSaveLanguage}
+        isLoading={isLoading}
       >
-        <Text style={styles.modalLabel}>Language</Text>
+        {modalError ? (
+          <View style={styles.modalErr}>
+            <Text style={styles.modalErrText}>{modalError}</Text>
+          </View>
+        ) : null}
+        <Pressable onPress={() => setDraftLanguage('en')} style={[styles.langOption, draftLanguage === 'en' && styles.langOptionSelected]}>
+          <Text style={styles.langOptionText}>{t('lang.english')}</Text>
+          {draftLanguage === 'en' ? <Text style={styles.langCheck}>✓</Text> : null}
+        </Pressable>
+        <Pressable onPress={() => setDraftLanguage('ur')} style={[styles.langOption, draftLanguage === 'ur' && styles.langOptionSelected]}>
+          <Text style={styles.langOptionText}>{t('lang.urdu')}</Text>
+          {draftLanguage === 'ur' ? <Text style={styles.langCheck}>✓</Text> : null}
+        </Pressable>
+      </EditModal>
+
+      <EditModal
+        visible={activeModal === 'biometric'}
+        title={`Enable ${biometryLabel}`}
+        subtitle='Enter your account password to save credentials securely.'
+        onClose={closeModal}
+        onSave={handleSaveBiometric}
+        isLoading={isLoading}
+      >
+        {modalError ? (
+          <View style={styles.modalErr}>
+            <Text style={styles.modalErrText}>{modalError}</Text>
+          </View>
+        ) : null}
+        <Text style={styles.modalLabel}>Password</Text>
         <TextInput
           mode='outlined'
-          placeholder='e.g. English, Urdu'
-          outlineColor='rgba(255,255,255,0.1)'
+          placeholder='••••••••'
+          value={biometricPassword}
+          onChangeText={setBiometricPassword}
+          secureTextEntry={!showBioPass}
+          right={
+            <TextInput.Icon
+              icon={() => (showBioPass ? <EyeOff size={18} /> : <Eye size={18} />)}
+              color={colors.textMuted}
+              onPress={() => setShowBioPass((v) => !v)}
+            />
+          }
+          outlineColor={colors.inputOutline}
           activeOutlineColor={colors.primary}
           style={styles.modalInput}
-          placeholderTextColor='rgba(255,255,255,0.2)'
-          theme={INPUT_THEME}
+          placeholderTextColor={colors.textFaint}
+          theme={inputTheme}
+        />
+      </EditModal>
+
+      <EditModal
+        visible={deletePasswordVisible}
+        title='Confirm password'
+        subtitle='Enter your password to permanently delete your account.'
+        onClose={() => {
+          setDeletePasswordVisible(false)
+          setModalError('')
+        }}
+        onSave={handleSaveDeletePassword}
+        isLoading={isLoading}
+      >
+        {modalError ? (
+          <View style={styles.modalErr}>
+            <Text style={styles.modalErrText}>{modalError}</Text>
+          </View>
+        ) : null}
+        <Text style={styles.modalLabel}>Password</Text>
+        <TextInput
+          mode='outlined'
+          placeholder='••••••••'
+          value={deletePassword}
+          onChangeText={setDeletePassword}
+          secureTextEntry={!showDeletePass}
+          right={
+            <TextInput.Icon
+              icon={() => (showDeletePass ? <EyeOff size={18} /> : <Eye size={18} />)}
+              color={colors.textMuted}
+              onPress={() => setShowDeletePass((v) => !v)}
+            />
+          }
+          outlineColor={colors.inputOutline}
+          activeOutlineColor={colors.primary}
+          style={styles.modalInput}
+          placeholderTextColor={colors.textFaint}
+          theme={inputTheme}
         />
       </EditModal>
     </>
   )
 }
-
-type ModalType = 'name' | 'email' | 'password' | 'language' | null
 
 export default ProfileScreen
