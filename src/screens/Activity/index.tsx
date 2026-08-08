@@ -5,9 +5,10 @@ import React, { useCallback, useState } from 'react'
 import { Alert, Pressable, ScrollView, View } from 'react-native'
 import { Text } from 'tamagui'
 
+import ResultActions from '../../components/ResultActions'
 import { useLanguage } from '../../context/Language'
 import { useThemedStyles } from '../../theme'
-import { clearHistory, loadHistory, type HistoryItem } from '../../services/history'
+import { clearHistory, historyTypeKey, loadHistory, type HistoryItem } from '../../services/history'
 import type { RootStackParamList } from '../../types/navigation'
 import type { TabParamList } from '../../types/tabs'
 import { directionStyle } from '../../utils/rtl'
@@ -57,8 +58,12 @@ const ActivityScreen = (_props: Props) => {
     <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
       <View style={styles.ambientGlow} />
       <View style={styles.header}>
-        <Text style={styles.title}>{t('activity.title')}</Text>
-        <Text style={styles.sub}>{t('activity.sub')}</Text>
+        <Text style={styles.title} maxFontSizeMultiplier={1.4}>
+          {t('activity.title')}
+        </Text>
+        <Text style={styles.sub} maxFontSizeMultiplier={1.35}>
+          {t('activity.sub')}
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -75,11 +80,16 @@ const ActivityScreen = (_props: Props) => {
         ) : (
           items.map((item) => (
             <View key={item.id} style={styles.row}>
-              <Text style={styles.rowType}>
-                {item.type === 'speech-to-text' ? t('activity.speechToText') : t('activity.speechToSign')}
-                {item.status === 'unsupported' ? ` · ${t('activity.unsupported')}` : ''}
+              <View style={styles.rowTop}>
+                <Text style={styles.rowType}>
+                  {t(historyTypeKey(item.type))}
+                  {item.status === 'unsupported' ? ` · ${t('activity.unsupported')}` : ''}
+                </Text>
+                <ResultActions text={item.text} />
+              </View>
+              <Text style={styles.rowText} selectable maxFontSizeMultiplier={1.4}>
+                {item.text || '—'}
               </Text>
-              <Text style={styles.rowText}>{item.text || '—'}</Text>
               <Text style={styles.rowMeta}>{formatWhen(item.createdAt)}</Text>
             </View>
           ))

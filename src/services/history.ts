@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { STORAGE_KEYS } from '../config/storageKeys'
 import type { AppLanguage } from '../i18n/translations'
 
-export type ConversionType = 'speech-to-text' | 'speech-to-sign'
+export type ConversionType = 'speech-to-text' | 'speech-to-sign' | 'sign-to-text'
 
 export type HistoryItem = {
   id: string
@@ -42,4 +42,10 @@ export async function addHistoryItem(item: Omit<HistoryItem, 'id' | 'createdAt'>
 
 export async function clearHistory(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEYS.history)
+}
+
+export function historyTypeKey(type: ConversionType): string {
+  if (type === 'speech-to-text') return 'activity.speechToText'
+  if (type === 'speech-to-sign') return 'activity.speechToSign'
+  return 'activity.signToText'
 }

@@ -9,7 +9,7 @@ import { Text, View, XStack, YStack } from 'tamagui'
 import { useAuthUser } from '../../context/AuthUser'
 import { useLanguage } from '../../context/Language'
 import { useAppTheme } from '../../context/Theme'
-import { loadHistory, type HistoryItem } from '../../services/history'
+import { historyTypeKey, loadHistory, type HistoryItem } from '../../services/history'
 import { useThemedStyles } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
 import { TabParamList } from '../../types/tabs'
@@ -58,9 +58,15 @@ const HomeScreen = ({ navigation }: Props) => {
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
           <YStack px='$5' mt='$3'>
-            <Text style={styles.greetingLabel}>{getGreeting()}</Text>
-            <Text style={styles.welcomeName}>{displayName}</Text>
-            <Text style={styles.welcomeSub}>{t('home.welcomeSub')}</Text>
+            <Text style={styles.greetingLabel} maxFontSizeMultiplier={1.3}>
+              {getGreeting()}
+            </Text>
+            <Text style={styles.welcomeName} maxFontSizeMultiplier={1.4}>
+              {displayName}
+            </Text>
+            <Text style={styles.welcomeSub} maxFontSizeMultiplier={1.35}>
+              {t('home.welcomeSub')}
+            </Text>
           </YStack>
 
           <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -80,9 +86,7 @@ const HomeScreen = ({ navigation }: Props) => {
             ) : (
               recents.map((item) => (
                 <View key={item.id} style={styles.recentRow}>
-                  <Text style={styles.recentType}>
-                    {item.type === 'speech-to-text' ? t('activity.speechToText') : t('activity.speechToSign')}
-                  </Text>
+                  <Text style={styles.recentType}>{t(historyTypeKey(item.type))}</Text>
                   <Text style={styles.recentText} numberOfLines={2}>
                     {item.text}
                   </Text>

@@ -2,6 +2,7 @@ import { API_BASE_URLS } from '../../config'
 import type { AppLanguage } from '../i18n/translations'
 
 import { toUploadUri } from './mic'
+import { reportOffline, reportOnline } from './networkStatus'
 
 export type SpeechToTextResult = {
   language?: string
@@ -43,7 +44,9 @@ async function postTranscribe<T>(base: string, uri: string, language: AppLanguag
   let res: Response
   try {
     res = await fetch(`${base}/transcribe`, { method: 'POST', body: formData })
+    reportOnline()
   } catch {
+    reportOffline()
     throw new SpeechApiError('Could not reach the server. Check your connection.', 'network')
   }
 

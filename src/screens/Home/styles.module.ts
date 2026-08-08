@@ -136,6 +136,7 @@ const createStyles = (c: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 14,
+      minHeight: 72,
     },
     featureCardPressed: {
       backgroundColor: c.cardPressed,

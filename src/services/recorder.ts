@@ -16,3 +16,12 @@ export async function startAppRecorder(): Promise<string> {
 export async function stopAppRecorder(): Promise<string> {
   return getPlayer().stopRecorder()
 }
+
+/** Stop the mic if it is open. Safe to call when not recording. */
+export async function discardAppRecorder(): Promise<void> {
+  try {
+    await getPlayer().stopRecorder()
+  } catch {
+    // not recording
+  }
+}

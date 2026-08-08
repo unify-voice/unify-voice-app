@@ -1,18 +1,17 @@
 import { Clock3, Home, User } from '@tamagui/lucide-icons-2'
 import React from 'react'
-import { Pressable, View, Text } from 'react-native'
+import { Pressable, Text, View } from 'react-native'
 
 import { useLanguage } from '../../../context/Language'
 import { useAppTheme } from '../../../context/Theme'
 import { useThemedStyles } from '../../../theme'
-import { directionStyle } from '../../../utils/rtl'
 
 import { createStyles } from './styles.module'
 
 const CustomTabBar = ({ navigation }: { navigation: any }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
-  const { t, isRTL } = useLanguage()
+  const { t } = useLanguage()
   const currentRoute = navigation.getState().routes[navigation.getState().index].name
 
   const tabs = [
@@ -22,7 +21,7 @@ const CustomTabBar = ({ navigation }: { navigation: any }) => {
   ]
 
   return (
-    <View style={[styles.bottomNav, directionStyle(isRTL)]}>
+    <View style={styles.bottomNav}>
       {tabs.map((tab) => {
         const isActive = currentRoute === tab.name
         const Icon = tab.Icon
@@ -33,12 +32,20 @@ const CustomTabBar = ({ navigation }: { navigation: any }) => {
             key={tab.name}
             onPress={() => navigation.navigate(tab.name)}
             style={styles.navItem}
-            accessibilityRole='button'
+            hitSlop={6}
+            accessibilityRole='tab'
             accessibilityLabel={t(tab.labelKey)}
+            accessibilityState={{ selected: isActive }}
           >
             <Icon size={20} color={color} opacity={isActive ? 1 : 0.45} />
-            <Text style={[styles.navLabel, isActive && { color: colors.primary, opacity: 1 }]}>{t(tab.labelKey)}</Text>
-            <View style={styles.dotContainer}>{isActive && <View style={styles.navDot} />}</View>
+            <Text
+              style={[styles.navLabel, isActive && { color: colors.primary, opacity: 1 }]}
+              numberOfLines={1}
+              maxFontSizeMultiplier={1.2}
+            >
+              {t(tab.labelKey)}
+            </Text>
+            <View style={styles.dotContainer}>{isActive ? <View style={styles.navDot} /> : null}</View>
           </Pressable>
         )
       })}

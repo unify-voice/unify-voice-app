@@ -59,13 +59,20 @@ const createStyles = (c: ThemeColors) =>
       padding: 14,
       marginBottom: 10,
     },
+    rowTop: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+      marginBottom: 8,
+    },
     rowType: {
+      flex: 1,
       fontSize: 10,
       letterSpacing: 1.2,
       textTransform: 'uppercase',
       color: c.primary,
       fontWeight: '700',
-      marginBottom: 6,
     },
     rowText: {
       fontSize: 15,

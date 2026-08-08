@@ -13,8 +13,12 @@ const createStyles = (c: ThemeColors) =>
       flexDirection: 'row',
       justifyContent: 'flex-end',
       alignItems: 'center',
-      paddingTop: 8,
-      minHeight: 36,
+      minHeight: 44,
+    },
+    skipHit: {
+      minHeight: 44,
+      justifyContent: 'center',
+      paddingHorizontal: 4,
     },
     skip: {
       color: c.textMuted,
@@ -25,7 +29,7 @@ const createStyles = (c: ThemeColors) =>
       height: 4,
       borderRadius: 2,
       backgroundColor: c.divider,
-      marginTop: 16,
+      marginTop: 8,
       overflow: 'hidden',
     },
     progressFill: {
@@ -35,9 +39,9 @@ const createStyles = (c: ThemeColors) =>
     },
     body: {
       flex: 1,
+      width: '100%',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 8,
     },
     iconBubble: {
       width: 96,
@@ -48,7 +52,13 @@ const createStyles = (c: ThemeColors) =>
       borderColor: c.primaryBorder,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 28,
+      marginBottom: 24,
+    },
+    iconBubbleCompact: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      marginBottom: 16,
     },
     title: {
       fontSize: 26,
@@ -57,6 +67,7 @@ const createStyles = (c: ThemeColors) =>
       textAlign: 'center',
       letterSpacing: -0.4,
       marginBottom: 12,
+      paddingHorizontal: 8,
     },
     copy: {
       fontSize: 15,
@@ -64,7 +75,7 @@ const createStyles = (c: ThemeColors) =>
       color: c.textMuted,
       textAlign: 'center',
       fontWeight: '400',
-      maxWidth: 320,
+      paddingHorizontal: 8,
     },
     counter: {
       textAlign: 'center',
@@ -75,7 +86,7 @@ const createStyles = (c: ThemeColors) =>
     actions: {
       flexDirection: 'row',
       gap: 12,
-      paddingBottom: 28,
+      paddingBottom: 12,
     },
     btn: {
       flex: 1,
@@ -101,6 +112,39 @@ const createStyles = (c: ThemeColors) =>
       color: c.textMuted,
       fontSize: 15,
       fontWeight: '600',
+    },
+    langWrap: {
+      flexDirection: 'row',
+      width: '100%',
+      gap: 10,
+      marginTop: 22,
+    },
+    langPill: {
+      flex: 1,
+      minHeight: 64,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.controlBorder,
+      backgroundColor: c.controlBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 12,
+    },
+    langPillSelected: {
+      borderColor: c.primary,
+      backgroundColor: c.primaryMuted,
+    },
+    langPillText: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: c.textPrimary,
+    },
+    langPillCode: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: c.textFaint,
+      marginTop: 4,
+      letterSpacing: 1,
     },
   })
 

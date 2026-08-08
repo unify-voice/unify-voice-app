@@ -4,13 +4,16 @@ import React, { useEffect, useRef, useState } from 'react'
 import { Alert, Animated, Pressable, ScrollView, View } from 'react-native'
 import { Text, XStack, YStack } from 'tamagui'
 
+import ResultActions from '../../components/ResultActions'
 import Screen from '../../components/layouts/Screen'
 import { useLanguage } from '../../context/Language'
 import { usePreferences } from '../../context/Preferences'
 import { useAppTheme } from '../../context/Theme'
+import { useBusyLeaveGuard } from '../../hooks/useBusyLeaveGuard'
+import { cueError, cueListenStart, cueListenStop, cueSuccess } from '../../services/feedback'
 import { addHistoryItem } from '../../services/history'
 import { ensureMicrophonePermission, openAppSettings } from '../../services/mic'
-import { startAppRecorder, stopAppRecorder } from '../../services/recorder'
+import { discardAppRecorder, startAppRecorder, stopAppRecorder } from '../../services/recorder'
 import { displaySpeechText, SpeechApiError, transcribeSpeechToText } from '../../services/speechApi'
 import { useThemedStyles } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
@@ -35,6 +38,24 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current
   const pulseAnim = useRef(new Animated.Value(1)).current
   const waveAnims = useRef([0.3, 0.6, 0.4, 0.8, 0.5].map((v) => new Animated.Value(v))).current
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      void discardAppRecorder()
+    }
+  }, [])
+
+  const busy = phase === 'listening' || phase === 'processing'
+  useBusyLeaveGuard(navigation, busy, {
+    title: t('session.leaveTitle'),
+    message: phase === 'listening' ? t('session.leaveListening') : t('session.leaveProcessing'),
+    stayLabel: t('session.stay'),
+    leaveLabel: t('session.leave'),
+    onDiscard: discardAppRecorder,
+  })
 
   useEffect(() => {
     Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start()
@@ -75,14 +96,17 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
     setPhase('processing')
     try {
       const result = await transcribeSpeechToText(path, conversionLang)
+      if (!mountedRef.current) return
       const displayText = displaySpeechText(result)
       if (!displayText) {
         setPhase('empty')
         setErrorMessage(t('stt.noText'))
+        cueError()
         return
       }
       setTranscript((prev) => [...prev, displayText])
       setPhase('success')
+      cueSuccess()
       await addHistoryItem({
         type: 'speech-to-text',
         text: displayText,
@@ -90,8 +114,10 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
         conversionLang,
       })
     } catch (err) {
+      if (!mountedRef.current) return
       setErrorMessage(err instanceof SpeechApiError ? err.message : t('stt.network'))
       setPhase('error')
+      cueError()
     }
   }
 
@@ -100,6 +126,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
     if (permission !== 'granted') {
       setPhase('denied')
       setErrorMessage(t('stt.permission'))
+      cueError()
       if (permission === 'blocked') {
         Alert.alert(t('stt.permission'), '', [
           { text: t('common.cancel'), style: 'cancel' },
@@ -114,9 +141,11 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
       const uri = await startAppRecorder()
       setLastAudioPath(uri)
       setPhase('listening')
+      cueListenStart()
     } catch {
       setPhase('error')
       setErrorMessage(t('stt.network'))
+      cueError()
     }
   }
 
@@ -125,10 +154,12 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
       const resultPath = await stopAppRecorder()
       const path = resultPath || lastAudioPath
       setLastAudioPath(path)
+      cueListenStop()
       await processAudio(path)
     } catch {
       setPhase('error')
       setErrorMessage(t('stt.network'))
+      cueError()
     }
   }
 
@@ -158,8 +189,12 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
 
         <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
           <YStack px='$5' pt='$3' pb='$2'>
-            <Text style={styles.screenTitle}>{t('stt.title')}</Text>
-            <Text style={styles.screenSub}>{t('stt.sub')}</Text>
+            <Text style={styles.screenTitle} maxFontSizeMultiplier={1.4}>
+              {t('stt.title')}
+            </Text>
+            <Text style={styles.screenSub} maxFontSizeMultiplier={1.35}>
+              {t('stt.sub')}
+            </Text>
           </YStack>
 
           <View style={styles.micCard}>
@@ -184,6 +219,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
                 disabled={phase === 'processing'}
                 accessibilityRole='button'
                 accessibilityLabel={statusLabel}
+                accessibilityState={{ busy: phase === 'processing', disabled: phase === 'processing' }}
                 style={[styles.micBtn, phase === 'listening' && styles.micBtnActive, phase === 'processing' && { opacity: 0.4 }]}
               >
                 {phase === 'listening' ? <View style={styles.micBtnRing} /> : null}
@@ -204,11 +240,14 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.transcriptSection}>
             <XStack ai='center' jc='space-between' mb='$2'>
               <Text style={styles.transcriptLabel}>{t('stt.transcript')}</Text>
-              {transcript.length > 0 ? (
-                <Pressable onPress={() => setTranscript([])} accessibilityRole='button'>
-                  <Text style={styles.clearBtn}>{t('common.clear')}</Text>
-                </Pressable>
-              ) : null}
+              <XStack ai='center' gap='$2'>
+                <ResultActions text={transcript.join('\n')} />
+                {transcript.length > 0 ? (
+                  <Pressable onPress={() => setTranscript([])} accessibilityRole='button' hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                    <Text style={styles.clearBtn}>{t('common.clear')}</Text>
+                  </Pressable>
+                ) : null}
+              </XStack>
             </XStack>
 
             <ScrollView style={styles.transcriptScroll} contentContainerStyle={{ padding: 14, flexGrow: 1 }}>
@@ -218,7 +257,9 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
                 transcript.map((line, i) => (
                   <View key={`${line}-${i}`} style={styles.transcriptLine}>
                     <View style={styles.transcriptDot} />
-                    <Text style={styles.transcriptText}>{line}</Text>
+                    <Text style={styles.transcriptText} selectable maxFontSizeMultiplier={1.4}>
+                      {line}
+                    </Text>
                   </View>
                 ))
               )}
