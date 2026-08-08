@@ -3,16 +3,6 @@ import type { ComponentType } from 'react'
 
 type FeatureIcon = ComponentType<{ size?: number; color?: string }>
 
-const WEEKLY_DATA = [
-  { day: 'Mon', height: 28 },
-  { day: 'Tue', height: 44 },
-  { day: 'Wed', height: 20 },
-  { day: 'Thu', height: 56, active: true },
-  { day: 'Fri', height: 36 },
-  { day: 'Sat', height: 16 },
-  { day: 'Sun', height: 8 },
-]
-
 const FEATURES: {
   key: string
   Icon: FeatureIcon
@@ -43,4 +33,4 @@ const FEATURES: {
   },
 ]
 
-export { WEEKLY_DATA, FEATURES }
+export { FEATURES }

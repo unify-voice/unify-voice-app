@@ -4,6 +4,7 @@ import React from 'react'
 
 import CustomTabBar from '..'
 import { useAppTheme } from '../../../../context/Theme'
+import ActivityScreen from '../../../../screens/Activity'
 import HomeScreen from '../../../../screens/Home'
 import ProfileScreen from '../../../../screens/Home/components/Profile'
 import Header from '../../Header'
@@ -25,6 +26,7 @@ const TabNavigator = () => {
         })}
       >
         <Tab.Screen name='HomeScreen' component={HomeScreen as React.ComponentType<any>} />
+        <Tab.Screen name='ActivityScreen' component={ActivityScreen as React.ComponentType<any>} />
         <Tab.Screen name='ProfileScreen' component={ProfileScreen as React.ComponentType<any>} />
       </Tab.Navigator>
     </Screen>

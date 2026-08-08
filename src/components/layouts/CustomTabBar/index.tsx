@@ -1,4 +1,4 @@
-import { Home, User } from '@tamagui/lucide-icons-2'
+import { Clock3, Home, User } from '@tamagui/lucide-icons-2'
 import React from 'react'
 import { Pressable, View, Text } from 'react-native'
 
@@ -17,6 +17,7 @@ const CustomTabBar = ({ navigation }: { navigation: any }) => {
 
   const tabs = [
     { name: 'HomeScreen', Icon: Home, labelKey: 'tabs.home' },
+    { name: 'ActivityScreen', Icon: Clock3, labelKey: 'tabs.activity' },
     { name: 'ProfileScreen', Icon: User, labelKey: 'tabs.profile' },
   ]
 

@@ -12,6 +12,7 @@ import { useLanguage } from '../../../context/Language'
 import { useLoader } from '../../../context/Loader'
 import { useAppTheme } from '../../../context/Theme'
 import { getBiometryKind, getBiometryLabel, hasBiometricCredentials, loadBiometricCredentials, saveBiometricCredentials } from '../../../services/biometrics'
+import { enterAppAfterAuth } from '../../../navigation/enterApp'
 import { useThemedStyles } from '../../../theme'
 import { RootStackParamList } from '../../../types/navigation'
 import { mapAuthError } from '../../../utils/authErrors'
@@ -96,7 +97,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     try {
       await auth().signInWithEmailAndPassword(email.trim(), password)
       await offerBiometrics(email.trim(), password)
-      navigation.replace('MainTabs', { screen: 'HomeScreen' })
+      await enterAppAfterAuth(navigation, auth().currentUser?.uid)
     } catch (err: any) {
       setErrors((e) => ({ ...e, general: mapAuthError(err?.code) }))
     } finally {
@@ -114,7 +115,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         return
       }
       await auth().signInWithEmailAndPassword(creds.email, creds.password)
-      navigation.replace('MainTabs', { screen: 'HomeScreen' })
+      await enterAppAfterAuth(navigation, auth().currentUser?.uid)
     } catch (err: any) {
       if (err?.message?.includes('cancel') || err?.code === 'USER_CANCELED') return
       setErrors((e) => ({ ...e, general: mapAuthError(err?.code, 'Biometric sign-in failed. Try email instead.') }))
@@ -127,7 +128,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     show()
     try {
       await signInWithGoogle()
-      navigation.replace('MainTabs', { screen: 'HomeScreen' })
+      await enterAppAfterAuth(navigation, auth().currentUser?.uid)
     } catch (err: any) {
       if (err?.code === 'SIGN_IN_CANCELLED' || err?.message?.includes('cancel')) return
       setErrors((e) => ({ ...e, general: err?.message || 'Google sign-in failed. Try again.' }))

@@ -10,6 +10,7 @@ import Screen from '../../../components/layouts/Screen'
 import { signInWithGoogle } from '../../../config/googleAuth'
 import { useLoader } from '../../../context/Loader'
 import { useAppTheme } from '../../../context/Theme'
+import { enterAppAfterAuth } from '../../../navigation/enterApp'
 import { getBiometryKind, getBiometryLabel, saveBiometricCredentials } from '../../../services/biometrics'
 import { useThemedStyles } from '../../../theme'
 import { RootStackParamList } from '../../../types/navigation'
@@ -104,7 +105,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
         // Account exists; name can be updated later in Profile
       }
       await offerBiometrics(email.trim(), password)
-      navigation.replace('MainTabs', { screen: 'HomeScreen' })
+      await enterAppAfterAuth(navigation, cred.user.uid)
     } catch (err: any) {
       setErrors((e) => ({ ...e, general: mapAuthError(err?.code) }))
     } finally {
@@ -116,7 +117,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
     show()
     try {
       await signInWithGoogle()
-      navigation.replace('MainTabs', { screen: 'HomeScreen' })
+      await enterAppAfterAuth(navigation, authInstance.currentUser?.uid)
     } catch (err: any) {
       if (err?.code === 'SIGN_IN_CANCELLED' || err?.message?.includes('cancel')) return
       setErrors((e) => ({ ...e, general: err?.message || 'Google sign-in failed. Try again.' }))

@@ -7,6 +7,7 @@ import { Text, XStack, YStack } from 'tamagui'
 import uvLogo from '../../assets/logo.png'
 import { useLanguage } from '../../context/Language'
 import { useAppTheme } from '../../context/Theme'
+import { enterAppAfterAuth } from '../../navigation/enterApp'
 import { useThemedStyles } from '../../theme'
 import { directionStyle } from '../../utils/rtl'
 import { RootStackParamList } from '../../types/navigation'
@@ -64,7 +65,7 @@ const SplashScreen = ({ navigation }: Props) => {
         if (navigated) return
         navigated = true
         if (user) {
-          navigation.replace('MainTabs', { screen: 'HomeScreen' })
+          void enterAppAfterAuth(navigation, user.uid)
         } else {
           navigation.replace('Onboarding')
         }

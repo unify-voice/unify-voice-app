@@ -2,7 +2,7 @@ import auth, { EmailAuthProvider, getAuth, updatePassword, verifyBeforeUpdateEma
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { CommonActions, CompositeScreenProps } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Eye, EyeOff, Fingerprint, Info, Languages, Lock, LogOut, Mail, Moon, Pencil, ScanFace, Sun, Trash2, User } from '@tamagui/lucide-icons-2'
+import { AudioLines, BookOpen, Eye, EyeOff, Fingerprint, Info, Languages, Lock, LogOut, Mail, Moon, Pencil, ScanFace, Sun, Trash2, User } from '@tamagui/lucide-icons-2'
 import React, { useEffect, useRef, useState } from 'react'
 import { Alert, Animated, Image, Platform, Pressable, ScrollView } from 'react-native'
 import * as ImagePicker from 'react-native-image-picker'
@@ -13,6 +13,7 @@ import { signInWithGoogle, signOutGoogle } from '../../../../config/googleAuth'
 import { useAuthUser } from '../../../../context/AuthUser'
 import { useLanguage } from '../../../../context/Language'
 import { useLoader } from '../../../../context/Loader'
+import { usePreferences } from '../../../../context/Preferences'
 import { useAppTheme } from '../../../../context/Theme'
 import {
   ensurePhotoLibraryPermission,
@@ -42,12 +43,13 @@ import { createStyles } from './styles.module'
 
 type Props = CompositeScreenProps<BottomTabScreenProps<TabParamList, 'ProfileScreen'>, NativeStackScreenProps<RootStackParamList>>
 
-type ModalType = 'name' | 'email' | 'password' | 'language' | 'biometric' | null
+type ModalType = 'name' | 'email' | 'password' | 'language' | 'conversion' | 'biometric' | null
 
 const ProfileScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors, inputTheme, isDark, toggleDark } = useAppTheme()
   const { language, setLanguage, t, isRTL } = useLanguage()
+  const { conversionLang, setConversionLang } = usePreferences()
   const { show, hide } = useLoader()
   const { user, photoURL, refreshUser, setLocalPhotoURL } = useAuthUser()
 
@@ -68,6 +70,7 @@ const ProfileScreen = ({ navigation }: Props) => {
   const [showNew, setShowNew] = useState(false)
   const [showCon, setShowCon] = useState(false)
   const [draftLanguage, setDraftLanguage] = useState<AppLanguage>(language)
+  const [draftConversionLang, setDraftConversionLang] = useState<AppLanguage>(conversionLang)
   const [biometricPassword, setBiometricPassword] = useState('')
   const [showBioPass, setShowBioPass] = useState(false)
   const [deletePasswordVisible, setDeletePasswordVisible] = useState(false)
@@ -136,6 +139,7 @@ const ProfileScreen = ({ navigation }: Props) => {
       setShowCon(false)
     }
     if (type === 'language') setDraftLanguage(language)
+    if (type === 'conversion') setDraftConversionLang(conversionLang)
     if (type === 'biometric') {
       setBiometricPassword('')
       setShowBioPass(false)
@@ -319,6 +323,18 @@ const ProfileScreen = ({ navigation }: Props) => {
       closeModal()
     } catch {
       setModalError('Failed to update language.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSaveConversion = async () => {
+    setIsLoading(true)
+    try {
+      await setConversionLang(draftConversionLang)
+      closeModal()
+    } catch {
+      setModalError('Failed to update conversion language.')
     } finally {
       setIsLoading(false)
     }
@@ -612,6 +628,12 @@ const ProfileScreen = ({ navigation }: Props) => {
               onPress={() => openModal('language')}
             />
             <SettingRow
+              icon={<AudioLines size={17} color={colors.primary} />}
+              title={t('conv.title')}
+              subtitle={conversionLang === 'ur' ? t('lang.urdu') : t('lang.english')}
+              onPress={() => openModal('conversion')}
+            />
+            <SettingRow
               icon={isDark ? <Moon size={17} color={colors.primary} /> : <Sun size={17} color={colors.primary} />}
               title={t('profile.darkMode')}
               subtitle={isDark ? t('profile.on') : t('profile.off')}
@@ -633,7 +655,13 @@ const ProfileScreen = ({ navigation }: Props) => {
 
           <Text style={styles.sectionLabel}>{t('profile.about')}</Text>
           <View style={styles.groupCard}>
-            <SettingRow icon={<Info size={17} color={colors.primary} />} title={t('profile.version')} subtitle='v1.0.0 (build 42)' />
+            <SettingRow
+              icon={<BookOpen size={17} color={colors.primary} />}
+              title={t('profile.tutorial')}
+              subtitle={t('profile.tutorialSub')}
+              onPress={() => navigation.navigate('AppTutorial', { replay: true })}
+            />
+            <SettingRow icon={<Info size={17} color={colors.primary} />} title={t('profile.version')} subtitle='v1.0.0 (build 42)' noBorder />
           </View>
 
           <Text style={styles.sectionLabel}>{t('profile.actions')}</Text>
@@ -814,6 +842,31 @@ const ProfileScreen = ({ navigation }: Props) => {
           <Text style={styles.langOptionText}>{t('lang.urdu')}</Text>
           {draftLanguage === 'ur' ? <Text style={styles.langCheck}>✓</Text> : null}
         </Pressable>
+      </EditModal>
+
+      <EditModal
+        visible={activeModal === 'conversion'}
+        title={t('conv.title')}
+        subtitle={t('conv.subtitle')}
+        onClose={closeModal}
+        onSave={handleSaveConversion}
+        isLoading={isLoading}
+      >
+        {modalError ? (
+          <View style={styles.modalErr}>
+            <Text style={styles.modalErrText}>{modalError}</Text>
+          </View>
+        ) : null}
+        <Pressable onPress={() => setDraftConversionLang('en')} style={[styles.langOption, draftConversionLang === 'en' && styles.langOptionSelected]}>
+          <Text style={styles.langOptionText}>{t('lang.english')}</Text>
+          {draftConversionLang === 'en' ? <Text style={styles.langCheck}>✓</Text> : null}
+        </Pressable>
+        <Text style={[styles.modalSub, { marginBottom: 10 }]}>{t('conv.englishHint')}</Text>
+        <Pressable onPress={() => setDraftConversionLang('ur')} style={[styles.langOption, draftConversionLang === 'ur' && styles.langOptionSelected]}>
+          <Text style={styles.langOptionText}>{t('lang.urdu')}</Text>
+          {draftConversionLang === 'ur' ? <Text style={styles.langCheck}>✓</Text> : null}
+        </Pressable>
+        <Text style={styles.modalSub}>{t('conv.urduHint')}</Text>
       </EditModal>
 
       <EditModal

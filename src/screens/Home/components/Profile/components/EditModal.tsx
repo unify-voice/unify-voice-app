@@ -20,7 +20,7 @@ interface EditModalProps {
 const EditModal: React.FC<EditModalProps> = ({ visible, title, subtitle, onClose, onSave, isLoading, children }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
-  const { isRTL } = useLanguage()
+  const { isRTL, t } = useLanguage()
 
   return (
     <Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
@@ -32,10 +32,10 @@ const EditModal: React.FC<EditModalProps> = ({ visible, title, subtitle, onClose
             {children}
             <XStack gap='$3' mt='$3'>
               <Pressable onPress={onClose} style={styles.cancelBtn}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={onSave} disabled={isLoading} style={[styles.saveBtn, isLoading && { opacity: 0.5 }]}>
-                {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.saveBtnText}>Save</Text>}
+                {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.saveBtnText}>{t('common.save')}</Text>}
               </Pressable>
             </XStack>
           </Pressable>

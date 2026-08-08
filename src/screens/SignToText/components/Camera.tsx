@@ -123,18 +123,16 @@ const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
     setIsUploading(true)
     try {
       const formData = new FormData()
+      const uri = videoPath.startsWith('file://') ? videoPath : `file://${videoPath}`
       formData.append('video', {
-        uri: videoPath.replace('file://', ''),
-        type: 'video/mp4', // or 'video/quicktime' if iOS .mov
+        uri,
+        type: 'video/mp4',
         name: 'sign.mp4',
       })
 
       const response = await fetch(`${API_BASE_URLS.signToText}/predict`, {
         method: 'POST',
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       })
 
       const data = await response.json()

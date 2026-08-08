@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
+import { STORAGE_KEYS } from '../config/storageKeys'
 import { AppLanguage, translate } from '../i18n/translations'
 
 type LanguageContextValue = {
@@ -11,7 +12,7 @@ type LanguageContextValue = {
   isRTL: boolean
 }
 
-const STORAGE_KEY = '@unifyvoice/language'
+const STORAGE_KEY = STORAGE_KEYS.language
 
 const LanguageContext = createContext<LanguageContextValue | null>(null)
 

@@ -3,7 +3,9 @@ import storage from '@react-native-firebase/storage'
 import { Platform } from 'react-native'
 import { check, PERMISSIONS, request, RESULTS } from 'react-native-permissions'
 
-const cacheKey = (uid: string) => `@unifyvoice/avatar/${uid}`
+import { STORAGE_KEYS } from '../config/storageKeys'
+
+const cacheKey = (uid: string) => STORAGE_KEYS.avatar(uid)
 
 export const toDataUri = (base64: string, mime = 'image/jpeg') => {
   const clean = base64.includes(',') ? base64.split(',').pop()! : base64

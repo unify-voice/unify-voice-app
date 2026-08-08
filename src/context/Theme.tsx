@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { ColorSchemeName, StatusBar, useColorScheme } from 'react-native'
 
+import { STORAGE_KEYS } from '../config/storageKeys'
 import { darkColors, getInputTheme, lightColors, type ThemeColors } from '../theme/colors'
 
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -16,7 +17,7 @@ type ThemeContextValue = {
   isReady: boolean
 }
 
-const STORAGE_KEY = '@unifyvoice/theme-mode'
+const STORAGE_KEY = STORAGE_KEYS.themeMode
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 

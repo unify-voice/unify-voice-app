@@ -11,10 +11,12 @@ import { configureGoogleSignIn } from './src/config/googleAuth'
 import { AuthUserProvider } from './src/context/AuthUser'
 import { LanguageProvider, useLanguage } from './src/context/Language'
 import { LoaderProvider } from './src/context/Loader'
+import { PreferencesProvider } from './src/context/Preferences'
 import { ThemeProvider, useAppTheme } from './src/context/Theme'
 import ForgotPasswordScreen from './src/screens/Auth/ForgotPassword'
 import LoginScreen from './src/screens/Auth/Login'
 import SignupScreen from './src/screens/Auth/Signup'
+import AppTutorialScreen from './src/screens/AppTutorial'
 import OnboardingScreen from './src/screens/Onboarding'
 import SignToTextScreen from './src/screens/SignToText'
 import SpeechToSignScreen from './src/screens/SpeechToSign'
@@ -86,6 +88,7 @@ function AppNavigator() {
           <Stack.Screen name='Login' component={LoginScreen} />
           <Stack.Screen name='ForgotPasswordScreen' component={ForgotPasswordScreen} />
           <Stack.Screen name='SignupScreen' component={SignupScreen} />
+          <Stack.Screen name='AppTutorial' component={AppTutorialScreen} options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name='MainTabs' component={TabNavigator} options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name='SignToTextScreen' component={SignToTextScreen} />
           <Stack.Screen name='SpeechToTextScreen' component={SpeechToTextScreen} />
@@ -102,11 +105,13 @@ function App() {
       <SafeAreaProvider>
         <ThemeProvider>
           <LanguageProvider>
-            <AuthUserProvider>
-              <LoaderProvider>
-                <AppNavigator />
-              </LoaderProvider>
-            </AuthUserProvider>
+            <PreferencesProvider>
+              <AuthUserProvider>
+                <LoaderProvider>
+                  <AppNavigator />
+                </LoaderProvider>
+              </AuthUserProvider>
+            </PreferencesProvider>
           </LanguageProvider>
         </ThemeProvider>
       </SafeAreaProvider>

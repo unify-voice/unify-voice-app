@@ -174,6 +174,42 @@ const createStyles = (c: ThemeColors) =>
       flex: 1,
     },
 
+    errorCard: {
+      marginHorizontal: 20,
+      marginTop: 12,
+      backgroundColor: c.errorMuted,
+      borderLeftWidth: 3,
+      borderLeftColor: c.errorBorder,
+      borderRadius: 12,
+      padding: 14,
+    },
+    errorTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: c.errorText,
+      marginBottom: 4,
+    },
+    errorBody: {
+      fontSize: 13,
+      color: c.textPrimary,
+      lineHeight: 19,
+    },
+    secondaryBtn: {
+      borderWidth: 1,
+      borderColor: c.controlBorder,
+      borderRadius: 999,
+      paddingVertical: 12,
+      alignItems: 'center',
+      marginBottom: 10,
+      backgroundColor: c.controlBg,
+    },
+    secondaryBtnText: {
+      fontSize: 12,
+      fontWeight: '700',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+      color: c.textMuted,
+    },
     // Button
     primaryBtn: {
       backgroundColor: c.primaryMuted,
