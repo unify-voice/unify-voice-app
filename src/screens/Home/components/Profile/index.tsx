@@ -2,7 +2,7 @@ import auth, { EmailAuthProvider, getAuth, updatePassword, verifyBeforeUpdateEma
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
 import { CommonActions, CompositeScreenProps } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { AudioLines, BookOpen, Eye, EyeOff, Fingerprint, Info, Languages, Lock, LogOut, Mail, Moon, Pencil, ScanFace, Sun, Trash2, User } from '@tamagui/lucide-icons-2'
+import { AudioLines, BookOpen, Eye, EyeOff, Fingerprint, HelpCircle, Info, Languages, Lock, LogOut, Mail, Moon, Pencil, ScanFace, Shield, Sun, Trash2, User, Vibrate, Volume2 } from '@tamagui/lucide-icons-2'
 import React, { useEffect, useRef, useState } from 'react'
 import { Alert, Animated, Image, Platform, Pressable, ScrollView } from 'react-native'
 import * as ImagePicker from 'react-native-image-picker'
@@ -52,7 +52,7 @@ const ProfileScreen = ({ navigation }: Props) => {
   const profileScrollRef = useRef<ScrollView>(null)
   const { colors, inputTheme, isDark, toggleDark } = useAppTheme()
   const { language, setLanguage, t, isRTL } = useLanguage()
-  const { conversionLang, setConversionLang } = usePreferences()
+  const { conversionLang, setConversionLang, hapticsEnabled, setHapticsEnabled, soundCuesEnabled, setSoundCuesEnabled } = usePreferences()
   const { show, hide } = useLoader()
   const { user, photoURL, refreshUser, setLocalPhotoURL } = useAuthUser()
 
@@ -650,6 +650,20 @@ const ProfileScreen = ({ navigation }: Props) => {
               subtitle={isDark ? t('profile.on') : t('profile.off')}
               badge={isDark ? t('profile.on') : t('profile.off')}
               onPress={toggleDark}
+            />
+            <SettingRow
+              icon={<Vibrate size={17} color={colors.primary} />}
+              title={t('profile.haptics')}
+              subtitle={t('profile.hapticsSub')}
+              badge={hapticsEnabled ? t('profile.on') : t('profile.off')}
+              onPress={() => void setHapticsEnabled(!hapticsEnabled)}
+            />
+            <SettingRow
+              icon={<Volume2 size={17} color={colors.primary} />}
+              title={t('profile.soundCues')}
+              subtitle={t('profile.soundCuesSub')}
+              badge={soundCuesEnabled ? t('profile.on') : t('profile.off')}
+              onPress={() => void setSoundCuesEnabled(!soundCuesEnabled)}
               noBorder={!biometryAvailable}
             />
             {biometryAvailable ? (
@@ -671,6 +685,18 @@ const ProfileScreen = ({ navigation }: Props) => {
               title={t('profile.tutorial')}
               subtitle={t('profile.tutorialSub')}
               onPress={() => startTour()}
+            />
+            <SettingRow
+              icon={<HelpCircle size={17} color={colors.primary} />}
+              title={t('profile.help')}
+              subtitle={t('profile.helpSub')}
+              onPress={() => navigation.navigate('HelpScreen')}
+            />
+            <SettingRow
+              icon={<Shield size={17} color={colors.primary} />}
+              title={t('profile.privacy')}
+              subtitle={t('profile.privacySub')}
+              onPress={() => navigation.navigate('PrivacyScreen')}
             />
             <SettingRow icon={<Info size={17} color={colors.primary} />} title={t('profile.version')} subtitle='v1.0.0 (build 42)' noBorder />
           </View>

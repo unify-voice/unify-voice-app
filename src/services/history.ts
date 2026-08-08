@@ -49,3 +49,48 @@ export function historyTypeKey(type: ConversionType): string {
   if (type === 'speech-to-sign') return 'activity.speechToSign'
   return 'activity.signToText'
 }
+
+export function startOfLocalWeek(now = new Date()): number {
+  const d = new Date(now)
+  const day = d.getDay()
+  const mondayOffset = day === 0 ? 6 : day - 1
+  d.setDate(d.getDate() - mondayOffset)
+  d.setHours(0, 0, 0, 0)
+  return d.getTime()
+}
+
+export function countHistoryThisWeek(items: HistoryItem[]): number {
+  const from = startOfLocalWeek()
+  return items.filter((item) => item.createdAt >= from).length
+}
+
+export type WeekDayStat = {
+  index: number
+  startMs: number
+  count: number
+  isToday: boolean
+}
+
+const DAY_MS_KEYS = ['home.day.mon', 'home.day.tue', 'home.day.wed', 'home.day.thu', 'home.day.fri', 'home.day.sat', 'home.day.sun'] as const
+
+export function weekDayLabelKey(index: number): string {
+  return DAY_MS_KEYS[index] ?? DAY_MS_KEYS[0]
+}
+
+export function weekDayStats(items: HistoryItem[], now = new Date()): WeekDayStat[] {
+  const weekStart = startOfLocalWeek(now)
+  const today = new Date(now)
+  today.setHours(0, 0, 0, 0)
+  const todayMs = today.getTime()
+
+  return Array.from({ length: 7 }, (_, i) => {
+    const start = new Date(weekStart)
+    start.setDate(start.getDate() + i)
+    start.setHours(0, 0, 0, 0)
+    const startMs = start.getTime()
+    const end = new Date(start)
+    end.setDate(end.getDate() + 1)
+    const count = items.filter((item) => item.createdAt >= startMs && item.createdAt < end.getTime()).length
+    return { index: i, startMs, count, isToday: startMs === todayMs }
+  })
+}

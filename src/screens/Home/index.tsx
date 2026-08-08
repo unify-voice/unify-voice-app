@@ -5,19 +5,20 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import { ChevronRight } from '@tamagui/lucide-icons-2'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Animated, Pressable, ScrollView } from 'react-native'
-import { Text, View, XStack, YStack } from 'tamagui'
+import { Text, View, YStack } from 'tamagui'
 
 import { useAuthUser } from '../../context/AuthUser'
 import { useLanguage } from '../../context/Language'
 import { useAppTheme } from '../../context/Theme'
 import { TourTarget, useTour } from '../../context/Tour'
-import { historyTypeKey, loadHistory, type HistoryItem } from '../../services/history'
+import { countHistoryThisWeek, loadHistory, weekDayStats, type WeekDayStat } from '../../services/history'
 import { hasCompletedTutorial } from '../../services/tutorial'
 import { useThemedStyles } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
 import { TabParamList } from '../../types/tabs'
 import { directionStyle } from '../../utils/rtl'
 
+import WeekChart from './components/WeekChart'
 import { FEATURES } from './const'
 import { createStyles } from './styles.module'
 
@@ -35,7 +36,8 @@ const HomeScreen = ({ navigation }: Props) => {
   const { t, isRTL } = useLanguage()
   const { displayName, refreshUser } = useAuthUser()
   const { startTour, active, stepId } = useTour()
-  const [recents, setRecents] = useState<HistoryItem[]>([])
+  const [weekCount, setWeekCount] = useState(0)
+  const [weekDays, setWeekDays] = useState<WeekDayStat[]>(() => weekDayStats([]))
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const slideAnim = useRef(new Animated.Value(12)).current
@@ -45,7 +47,10 @@ const HomeScreen = ({ navigation }: Props) => {
   useFocusEffect(
     useCallback(() => {
       refreshUser()
-      void loadHistory().then((items) => setRecents(items.slice(0, 3)))
+      void loadHistory().then((items) => {
+        setWeekCount(countHistoryThisWeek(items))
+        setWeekDays(weekDayStats(items))
+      })
       const uid = auth().currentUser?.uid
       if (!uid || tourAskedRef.current) return
       void hasCompletedTutorial(uid).then((done) => {
@@ -99,29 +104,11 @@ const HomeScreen = ({ navigation }: Props) => {
           </TourTarget>
 
           <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <WeekChart days={weekDays} total={weekCount} onPress={() => navigation.navigate('ActivityScreen')} />
+
             <View style={styles.hintCard}>
               <Text style={styles.hintText}>{t('home.signsHint')}</Text>
             </View>
-
-            <XStack jc='space-between' ai='center' mb='$2'>
-              <Text style={styles.sectionLabel}>{t('home.recents')}</Text>
-              <Pressable onPress={() => navigation.navigate('ActivityScreen')} hitSlop={8}>
-                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>{t('home.viewAll')}</Text>
-              </Pressable>
-            </XStack>
-
-            {recents.length === 0 ? (
-              <Text style={styles.emptyRecents}>{t('home.recentsEmpty')}</Text>
-            ) : (
-              recents.map((item) => (
-                <View key={item.id} style={styles.recentRow}>
-                  <Text style={styles.recentType}>{t(historyTypeKey(item.type))}</Text>
-                  <Text style={styles.recentText} numberOfLines={2}>
-                    {item.text}
-                  </Text>
-                </View>
-              ))
-            )}
 
             <Text style={styles.sectionLabel}>{t('home.features')}</Text>
 

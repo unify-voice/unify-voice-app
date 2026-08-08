@@ -7,18 +7,28 @@ import cueSuccessWav from '../assets/cue-success.wav'
 
 const cuePlayer = new AudioRecorderPlayer()
 
+let hapticsEnabled = true
+let soundEnabled = true
+
+export const configureFeedback = (next: { haptics: boolean; sound: boolean }) => {
+  hapticsEnabled = next.haptics
+  soundEnabled = next.sound
+}
+
 const playAsset = async (asset: number) => {
+  if (!soundEnabled) return
   try {
     const resolved = Image.resolveAssetSource(asset)
     if (!resolved?.uri) return
     await cuePlayer.stopPlayer().catch(() => undefined)
     await cuePlayer.startPlayer(resolved.uri)
   } catch {
-    // sound is optional; haptics still fire
+    // sound is optional
   }
 }
 
 const tap = (pattern: number | number[]) => {
+  if (!hapticsEnabled) return
   try {
     Vibration.vibrate(pattern)
   } catch {

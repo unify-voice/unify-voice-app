@@ -5,4 +5,7 @@ export const STORAGE_KEYS = {
   history: '@unifyvoice/history',
   tutorial: (uid: string) => `@unifyvoice/tutorial-live/${uid}`,
   avatar: (uid: string) => `@unifyvoice/avatar/${uid}`,
+  haptics: '@unifyvoice/haptics',
+  soundCues: '@unifyvoice/sound-cues',
+  s2tTipsDismissed: '@unifyvoice/s2t-tips-dismissed',
 } as const

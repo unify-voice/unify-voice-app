@@ -20,7 +20,9 @@ import { TourProvider } from './src/context/Tour'
 import ForgotPasswordScreen from './src/screens/Auth/ForgotPassword'
 import LoginScreen from './src/screens/Auth/Login'
 import SignupScreen from './src/screens/Auth/Signup'
+import HelpScreen from './src/screens/Help'
 import OnboardingScreen from './src/screens/Onboarding'
+import PrivacyScreen from './src/screens/Privacy'
 import SignToTextScreen from './src/screens/SignToText'
 import SpeechToSignScreen from './src/screens/SpeechToSign'
 import SpeechToTextScreen from './src/screens/SpeechToText'
@@ -97,6 +99,8 @@ function AppNavigator() {
             <Stack.Screen name='SignToTextScreen' component={SignToTextScreen} />
             <Stack.Screen name='SpeechToTextScreen' component={SpeechToTextScreen} />
             <Stack.Screen name='SpeechToSignScreen' component={SpeechToSignScreen} />
+            <Stack.Screen name='HelpScreen' component={HelpScreen} />
+            <Stack.Screen name='PrivacyScreen' component={PrivacyScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </View>

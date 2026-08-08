@@ -15,5 +15,7 @@ export type RootStackParamList = {
   SpeechToSignScreen: undefined
   SpeechToTextScreen: undefined
   ProfileScreen: undefined
+  HelpScreen: undefined
+  PrivacyScreen: undefined
   MainTabs: NavigatorScreenParams<TabParamList>
 }

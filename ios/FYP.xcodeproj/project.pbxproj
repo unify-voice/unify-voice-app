@@ -12,6 +12,7 @@
 		146175BA2438182FB98BDE41 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		4C240A502F994C50007E4E61 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4C240A4F2F994C50007E4E61 /* GoogleService-Info.plist */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
+		A8E1KEEP01AWAKE000000001 /* KeepAwake.m in Sources */ = {isa = PBXBuildFile; fileRef = A8E1KEEP01AWAKE000000002 /* KeepAwake.m */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
@@ -24,6 +25,7 @@
 		31176A5C22F0111BC3FB5987 /* Pods_FYP.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_FYP.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4C240A4F2F994C50007E4E61 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = FYP/AppDelegate.swift; sourceTree = "<group>"; };
+		A8E1KEEP01AWAKE000000002 /* KeepAwake.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = KeepAwake.m; path = FYP/KeepAwake.m; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = FYP/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F89F5E41124843D97B76A1C8 /* Pods-FYP.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-FYP.release.xcconfig"; path = "Target Support Files/Pods-FYP/Pods-FYP.release.xcconfig"; sourceTree = "<group>"; };
@@ -46,6 +48,7 @@
 			children = (
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
+				A8E1KEEP01AWAKE000000002 /* KeepAwake.m */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
@@ -265,6 +268,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
+				A8E1KEEP01AWAKE000000001 /* KeepAwake.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -13,6 +13,7 @@ import { useLanguage } from '../../context/Language'
 import { usePreferences } from '../../context/Preferences'
 import { useAppTheme } from '../../context/Theme'
 import { useBusyLeaveGuard } from '../../hooks/useBusyLeaveGuard'
+import { useKeepAwake } from '../../hooks/useKeepAwake'
 import { cueError, cueListenStart, cueListenStop, cueSuccess } from '../../services/feedback'
 import { addHistoryItem } from '../../services/history'
 import { ensureMicrophonePermission, openAppSettings } from '../../services/mic'
@@ -57,6 +58,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
   }, [])
 
   const busy = phase === 'listening' || phase === 'processing'
+  useKeepAwake(phase === 'listening' || phase === 'processing')
   useBusyLeaveGuard(navigation, busy, {
     title: t('session.leaveTitle'),
     message: phase === 'listening' ? t('session.leaveListening') : t('session.leaveProcessing'),

@@ -9,8 +9,10 @@ import { useLanguage } from '../../../context/Language'
 import { usePreferences } from '../../../context/Preferences'
 import { useAppTheme } from '../../../context/Theme'
 import { useBusyLeaveGuard } from '../../../hooks/useBusyLeaveGuard'
+import { useKeepAwake } from '../../../hooks/useKeepAwake'
 import { cueError, cueRecordStart, cueRecordStop, cueSuccess } from '../../../services/feedback'
 import { addHistoryItem } from '../../../services/history'
+import { dismissS2tTips, hasDismissedS2tTips } from '../../../services/s2tTips'
 import { openAppSettings } from '../../../services/mic'
 import { predictSignVideo, type SignPrediction } from '../../../services/signApi'
 import { SpeechApiError } from '../../../services/speechApi'
@@ -43,6 +45,7 @@ const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
   const [detectedText, setDetectedText] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [lastVideoPath, setLastVideoPath] = useState('')
+  const [showTips, setShowTips] = useState(false)
 
   const pulseAnim = useRef(new Animated.Value(1)).current
   const device = useCameraDevice(cameraPosition)
@@ -55,6 +58,15 @@ const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
       })
     }
   }, [hasPermission, requestPermission])
+
+  useEffect(() => {
+    void hasDismissedS2tTips().then((done) => {
+      if (!done) setShowTips(true)
+    })
+  }, [])
+
+  const cameraOpen = isFocused && hasPermission && !!device
+  useKeepAwake(cameraOpen || phase === 'recording' || phase === 'processing')
 
   useEffect(() => {
     if (phase === 'recording') {
@@ -254,6 +266,24 @@ const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
           <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primary }}>{t('s2t.flipShort')}</Text>
         </Pressable>
       </XStack>
+
+      {showTips ? (
+        <View style={styles.tipCard}>
+          <Text style={styles.tipTitle}>{t('s2t.tipsTitle')}</Text>
+          <Text style={styles.tipBody}>{t('s2t.tipsBody')}</Text>
+          <Pressable
+            onPress={() => {
+              setShowTips(false)
+              void dismissS2tTips()
+            }}
+            style={styles.tipBtn}
+            accessibilityRole='button'
+            accessibilityLabel={t('s2t.tipsGotIt')}
+          >
+            <Text style={styles.tipBtnText}>{t('s2t.tipsGotIt')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={styles.cameraWrap}>
         {!hasPermission || phase === 'denied' ? (
