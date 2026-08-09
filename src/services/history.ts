@@ -14,6 +14,7 @@ export type HistoryItem = {
   status: 'success' | 'unsupported'
   videoUrl?: string
   conversionLang: AppLanguage
+  confidence?: number
 }
 
 const MAX_ITEMS = 50
@@ -69,6 +70,17 @@ export async function addHistoryItem(item: Omit<HistoryItem, 'id' | 'createdAt'>
   const next = [entry, ...current].slice(0, MAX_ITEMS)
   await AsyncStorage.setItem(key, JSON.stringify(next))
   return entry
+}
+
+export async function updateHistoryItem(
+  id: string,
+  patch: Partial<Pick<HistoryItem, 'text' | 'status' | 'confidence'>>,
+): Promise<void> {
+  const key = await historyKey()
+  if (!key) return
+  const current = await loadHistory()
+  const next = current.map((item) => (item.id === id ? { ...item, ...patch } : item))
+  await AsyncStorage.setItem(key, JSON.stringify(next))
 }
 
 export async function clearHistory(): Promise<void> {
