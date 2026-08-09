@@ -8,16 +8,16 @@ export type SignToTextPhrase = {
 
 /** Labels returned by the Sign-to-Text model (`/classes`). */
 export const SIGN_TO_TEXT_PHRASES: SignToTextPhrase[] = [
-  { id: 'assalam_o_alaikum', en: 'Assalam o Alaikum', ur: 'السلام علیکم' },
-  { id: 'can_i_help_you', en: 'Can I help you?', ur: 'کیا میں آپ کی مدد کروں؟' },
-  { id: 'do_you_speak_english', en: 'Do you speak English?', ur: 'کیا آپ انگریزی بولتے ہیں؟' },
-  { id: 'have_you_eaten', en: 'Have you eaten?', ur: 'کیا آپ نے کھانا کھایا؟' },
-  { id: 'how_are_you', en: 'How are you?', ur: 'آپ کیسے ہیں؟' },
+  { id: 'assalam_o_alaikum', en: 'Hello', ur: 'السلام علیکم' },
+  { id: 'can_i_help_you', en: 'Can I help you', ur: 'کیا میں آپ کی مدد کر سکتا ہوں؟' },
+  { id: 'do_you_speak_english', en: 'Do you speak English', ur: 'کیا آپ انگلش بول سکتے ہیں؟' },
+  { id: 'have_you_eaten', en: 'Have you eaten', ur: 'آپ نے کھانا کھا لیا؟' },
+  { id: 'how_are_you', en: 'How are you', ur: 'آپ کیسے ہیں؟' },
   { id: 'i_am_sick', en: 'I am sick', ur: 'میں بیمار ہوں' },
-  { id: 'i_do_not_understand', en: 'I do not understand', ur: 'میں نہیں سمجھتا' },
-  { id: 'see_you_later', en: 'See you later', ur: 'پھر ملیں گے' },
+  { id: 'i_do_not_understand', en: 'I do not understand', ur: 'مجھے سمجھ نہیں آئی' },
+  { id: 'see_you_later', en: 'See you later', ur: 'بعد میں ملتے ہیں' },
   { id: 'welcome', en: 'Welcome', ur: 'خوش آمدید' },
-  { id: 'well_done', en: 'Well done', ur: 'بہت خوب' },
+  { id: 'well_done', en: 'Well done', ur: 'بہت اچھا' },
 ]
 
 export const SIGN_TO_TEXT_PHRASE_COUNT = SIGN_TO_TEXT_PHRASES.length
