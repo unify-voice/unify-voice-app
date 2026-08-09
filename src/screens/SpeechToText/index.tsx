@@ -102,7 +102,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
     try {
       const result = await transcribeSpeechToText(path, conversionLang)
       if (!mountedRef.current) return
-      const displayText = displaySpeechText(result)
+      const displayText = displaySpeechText(result, conversionLang)
       if (!displayText) {
         setPhase('empty')
         setErrorMessage(t('stt.noText'))
@@ -149,7 +149,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
       cueListenStart()
     } catch {
       setPhase('error')
-      setErrorMessage(t('stt.network'))
+      setErrorMessage(t('stt.recordFail'))
       cueError()
     }
   }
@@ -163,7 +163,7 @@ const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
       await processAudio(path)
     } catch {
       setPhase('error')
-      setErrorMessage(t('stt.network'))
+      setErrorMessage(t('stt.recordFail'))
       cueError()
     }
   }

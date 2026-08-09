@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <!-- Newer Let's Encrypt intermediates (YE1 / Root YE) are missing on many Android trust stores.
+       Without these anchors, every HTTPS call to sparo.com.co fails and the app looks offline. -->
+  <base-config cleartextTrafficPermitted="true">
+    <trust-anchors>
+      <certificates src="system" />
+      <certificates src="user" />
+      <certificates src="@raw/isrg_root_x1" />
+      <certificates src="@raw/isrg_root_x2" />
+      <certificates src="@raw/isrg_root_ye" />
+      <certificates src="@raw/lets_encrypt_ye1" />
+    </trust-anchors>
+  </base-config>
+</network-security-config>

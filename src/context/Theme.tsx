@@ -28,7 +28,7 @@ const resolveIsDark = (mode: ThemeMode, systemScheme: ColorSchemeName) => {
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const systemScheme = useColorScheme()
-  const [mode, setModeState] = useState<ThemeMode>('dark')
+  const [mode, setModeState] = useState<ThemeMode>('light')
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
           setModeState(stored)
         }
       } catch {
-        // keep default dark
+        // keep default light
       } finally {
         if (mounted) setIsReady(true)
       }

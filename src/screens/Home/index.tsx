@@ -22,12 +22,6 @@ import WeekChart from './components/WeekChart'
 import { FEATURES } from './const'
 import { createStyles } from './styles.module'
 
-const FEATURE_TOUR_ID = {
-  'sign-to-text': 'signToText',
-  'speech-to-sign': 'speechToSign',
-  'speech-to-text': 'speechToText',
-} as const
-
 type Props = CompositeScreenProps<BottomTabScreenProps<TabParamList, 'HomeScreen'>, NativeStackScreenProps<RootStackParamList>>
 
 const HomeScreen = ({ navigation }: Props) => {
@@ -63,9 +57,7 @@ const HomeScreen = ({ navigation }: Props) => {
   useEffect(() => {
     if (!active) return
     if (stepId === 'welcome') scrollRef.current?.scrollTo({ y: 0, animated: true })
-    if (stepId === 'signToText' || stepId === 'speechToSign' || stepId === 'speechToText') {
-      scrollRef.current?.scrollToEnd({ animated: true })
-    }
+    if (stepId === 'modules') scrollRef.current?.scrollToEnd({ animated: true })
   }, [active, stepId])
 
   useEffect(() => {
@@ -103,31 +95,32 @@ const HomeScreen = ({ navigation }: Props) => {
 
             <Text style={styles.hintLine}>{t('home.signsHint')}</Text>
 
-            <Text style={styles.sectionLabel}>{t('home.features')}</Text>
+            <TourTarget id='modules'>
+              <Text style={styles.sectionLabel}>{t('home.features')}</Text>
 
-            {FEATURES.map((f, index) => {
-              const Icon = f.Icon
-              const tourId = FEATURE_TOUR_ID[f.key as keyof typeof FEATURE_TOUR_ID]
-              return (
-                <TourTarget key={f.key} id={tourId}>
-                  <Pressable
-                    onPress={() => navigation.navigate(f.route)}
-                    style={({ pressed }) => [styles.featureRow, pressed && { opacity: 0.7 }]}
-                    accessibilityRole='button'
-                    accessibilityLabel={t(f.titleKey)}
-                  >
-                    <View style={styles.featureOrb}>
-                      <Icon size={26} color={colors.primary} />
-                    </View>
-                    <YStack flex={1}>
-                      <Text style={styles.featureTitle}>{t(f.titleKey)}</Text>
-                      <Text style={styles.featureSub}>{t(f.subtitleKey)}</Text>
-                    </YStack>
-                  </Pressable>
-                  {index < FEATURES.length - 1 ? <View style={styles.featureRule} /> : null}
-                </TourTarget>
-              )
-            })}
+              {FEATURES.map((f, index) => {
+                const Icon = f.Icon
+                return (
+                  <View key={f.key}>
+                    <Pressable
+                      onPress={() => navigation.navigate(f.route)}
+                      style={({ pressed }) => [styles.featureRow, pressed && { opacity: 0.7 }]}
+                      accessibilityRole='button'
+                      accessibilityLabel={t(f.titleKey)}
+                    >
+                      <View style={styles.featureOrb}>
+                        <Icon size={26} color={colors.primary} />
+                      </View>
+                      <YStack flex={1}>
+                        <Text style={styles.featureTitle}>{t(f.titleKey)}</Text>
+                        <Text style={styles.featureSub}>{t(f.subtitleKey)}</Text>
+                      </YStack>
+                    </Pressable>
+                    {index < FEATURES.length - 1 ? <View style={styles.featureRule} /> : null}
+                  </View>
+                )
+              })}
+            </TourTarget>
           </ScrollView>
         </View>
       </Animated.View>

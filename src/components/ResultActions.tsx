@@ -5,18 +5,20 @@ import { Pressable, View } from 'react-native'
 import { useLanguage } from '../context/Language'
 import { useAppTheme } from '../context/Theme'
 import { cueSuccess } from '../services/feedback'
-import { copyText, shareText } from '../services/shareText'
+import { copyText, shareResult } from '../services/shareText'
 
 type Props = {
   text: string
+  videoUrl?: string | null
 }
 
-const ResultActions = ({ text }: Props) => {
+const ResultActions = ({ text, videoUrl }: Props) => {
   const { t } = useLanguage()
   const { colors } = useAppTheme()
   const [copied, setCopied] = useState(false)
+  const [sharing, setSharing] = useState(false)
 
-  if (!text.trim()) return null
+  if (!text.trim() && !videoUrl) return null
 
   const iconBtn = {
     width: 36,
@@ -29,27 +31,38 @@ const ResultActions = ({ text }: Props) => {
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {text.trim() ? (
+        <Pressable
+          onPress={async () => {
+            const ok = await copyText(text)
+            if (!ok) return
+            cueSuccess()
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1600)
+          }}
+          accessibilityRole='button'
+          accessibilityLabel={copied ? t('common.copied') : t('common.copy')}
+          hitSlop={8}
+          style={iconBtn}
+        >
+          {copied ? <Check size={16} color={colors.primary} /> : <Copy size={16} color={colors.primary} />}
+        </Pressable>
+      ) : null}
       <Pressable
         onPress={async () => {
-          const ok = await copyText(text)
-          if (!ok) return
-          cueSuccess()
-          setCopied(true)
-          setTimeout(() => setCopied(false), 1600)
+          if (sharing) return
+          setSharing(true)
+          try {
+            await shareResult({ text, videoUrl, title: 'Unify Voice' })
+          } finally {
+            setSharing(false)
+          }
         }}
-        accessibilityRole='button'
-        accessibilityLabel={copied ? t('common.copied') : t('common.copy')}
-        hitSlop={8}
-        style={iconBtn}
-      >
-        {copied ? <Check size={16} color={colors.primary} /> : <Copy size={16} color={colors.primary} />}
-      </Pressable>
-      <Pressable
-        onPress={() => void shareText(text)}
+        disabled={sharing}
         accessibilityRole='button'
         accessibilityLabel={t('common.share')}
         hitSlop={8}
-        style={iconBtn}
+        style={[iconBtn, sharing && { opacity: 0.5 }]}
       >
         <Share2 size={16} color={colors.primary} />
       </Pressable>

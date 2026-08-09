@@ -14,6 +14,7 @@ export const NetworkProvider = ({ children }: { children: React.ReactNode }) => 
 
   useEffect(() => {
     setNetworkListener(setIsOffline)
+    void probeConnection()
     return () => setNetworkListener(null)
   }, [])
 

@@ -86,7 +86,7 @@ const ActivityScreen = (_props: Props) => {
                   {t(historyTypeKey(item.type))}
                   {item.status === 'unsupported' ? ` · ${t('activity.unsupported')}` : ''}
                 </Text>
-                <ResultActions text={item.text} />
+                <ResultActions text={item.text} videoUrl={item.videoUrl} />
               </View>
               <Text style={styles.rowText} selectable maxFontSizeMultiplier={1.4}>
                 {item.text || '—'}

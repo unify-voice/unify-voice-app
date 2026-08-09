@@ -94,6 +94,9 @@ android {
             keyPassword 'android'
         }
     }
+    androidResources {
+        noCompress += ["pem", "crt", "der"]
+    }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug

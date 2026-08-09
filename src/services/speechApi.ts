@@ -93,8 +93,14 @@ export const transcribeSpeechToText = (uri: string, language: AppLanguage) =>
 export const transcribeSpeechToSign = (uri: string, language: AppLanguage) =>
   postTranscribe<SpeechToSignResult>(API_BASE_URLS.speechToSign, uri, language)
 
-export function displaySpeechText(result: { text?: string; roman_urdu?: string }): string {
-  return (result.text || result.roman_urdu || '').trim()
+export function displaySpeechText(
+  result: { text?: string; roman_urdu?: string },
+  lang?: AppLanguage,
+): string {
+  const text = (result.text || '').trim()
+  if (text) return text
+  if (lang === 'ur') return ''
+  return (result.roman_urdu || '').trim()
 }
 
 export function signVideoUrl(path?: string): string | null {

@@ -11,19 +11,14 @@ export const setNetworkListener = (next: Listener | null) => {
 export const reportOffline = () => listener?.(true)
 export const reportOnline = () => listener?.(false)
 
+/** Any HTTP response means the phone reached the API (TLS + DNS worked). */
 export async function probeConnection(): Promise<boolean> {
   try {
-    await fetch(API_BASE_URLS.speechToText, { method: 'HEAD' })
+    await fetch(API_BASE_URLS.speechToText, { method: 'GET' })
     reportOnline()
     return true
   } catch {
-    try {
-      await fetch(API_BASE_URLS.speechToText)
-      reportOnline()
-      return true
-    } catch {
-      reportOffline()
-      return false
-    }
+    reportOffline()
+    return false
   }
 }

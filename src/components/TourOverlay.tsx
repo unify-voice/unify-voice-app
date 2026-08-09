@@ -19,7 +19,7 @@ const RADIUS = 20
 const TourOverlay = () => {
   const tour = useOptionalTour()
   const { t, isRTL } = useLanguage()
-  const { colors } = useAppTheme()
+  const { colors, isDark } = useAppTheme()
   const { conversionLang, setConversionLang } = usePreferences()
   const insets = useSafeAreaInsets()
   const pulse = useRef(new Animated.Value(0)).current
@@ -89,7 +89,14 @@ const TourOverlay = () => {
                 {hasHole ? <Rect x={hx} y={hy} width={hw} height={hh} rx={RADIUS} ry={RADIUS} fill='#000' /> : null}
               </Mask>
             </Defs>
-            <Rect x={0} y={0} width={sw} height={sh} fill='rgba(8, 12, 10, 0.58)' mask='url(#tourHole)' />
+            <Rect
+              x={0}
+              y={0}
+              width={sw}
+              height={sh}
+              fill={isDark ? 'rgba(8, 12, 10, 0.62)' : 'rgba(17, 24, 19, 0.42)'}
+              mask='url(#tourHole)'
+            />
           </Svg>
         ) : null}
 
@@ -113,20 +120,29 @@ const TourOverlay = () => {
         <Animated.View
           style={[
             styles.stage,
+            {
+              backgroundColor: colors.background,
+              borderColor: colors.glassBorder,
+              opacity: fade,
+            },
             dockTop
-              ? { top: 0, paddingTop: Math.max(insets.top, 12) + 8 }
-              : { bottom: 0, paddingBottom: Math.max(insets.bottom, 16) + 8 },
-            { opacity: fade },
+              ? { top: 0, paddingTop: Math.max(insets.top, 12) + 8, borderBottomWidth: 1 }
+              : { bottom: 0, paddingBottom: Math.max(insets.bottom, 16) + 8, borderTopWidth: 1 },
           ]}
         >
-          <Pressable onPress={() => tour.skip()} style={styles.skipRow} hitSlop={8} accessibilityRole='button'>
-            <Text style={styles.skipText}>{t('tutorial.skip')}</Text>
-          </Pressable>
+          <View style={styles.topRow}>
+            <Text style={[styles.counter, { color: colors.textMuted }]} maxFontSizeMultiplier={1.2}>
+              {t('tutorial.counter').replace('{current}', String(stepIndex + 1)).replace('{total}', String(TOUR_STEPS.length))}
+            </Text>
+            <Pressable onPress={() => tour.skip()} style={styles.skipRow} hitSlop={8} accessibilityRole='button'>
+              <Text style={[styles.skipText, { color: colors.textSecondary }]}>{t('tutorial.skip')}</Text>
+            </Pressable>
+          </View>
 
-          <Text style={[styles.title, { color: colors.primary }]} maxFontSizeMultiplier={1.2}>
+          <Text style={[styles.title, { color: colors.textPrimary }]} maxFontSizeMultiplier={1.2}>
             {t(step.titleKey)}
           </Text>
-          <Text style={styles.body} maxFontSizeMultiplier={1.2}>
+          <Text style={[styles.body, { color: colors.textSecondary }]} maxFontSizeMultiplier={1.2}>
             {t(step.bodyKey)}
           </Text>
 
@@ -138,12 +154,12 @@ const TourOverlay = () => {
                   <Pressable
                     key={lang}
                     onPress={() => void setConversionLang(lang)}
-                    style={[styles.langChip, selected && { backgroundColor: colors.primary }]}
+                    style={[styles.langChip, { backgroundColor: colors.clay }, selected && { backgroundColor: colors.primary }]}
                     accessibilityRole='button'
                     accessibilityState={{ selected }}
                   >
                     {selected ? <Check size={14} color={colors.textOnPrimary} /> : null}
-                    <Text style={[styles.langChipText, selected && { color: colors.textOnPrimary }]}>
+                    <Text style={[styles.langChipText, { color: colors.textPrimary }, selected && { color: colors.textOnPrimary }]}>
                       {lang === 'en' ? t('lang.english') : t('lang.urdu')}
                     </Text>
                   </Pressable>
@@ -156,9 +172,9 @@ const TourOverlay = () => {
             {stepIndex > 0 ? (
               <Pressable onPress={() => tour.back()} style={styles.backHit} accessibilityRole='button'>
                 <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
-                  <ChevronLeft size={18} color='rgba(236,253,245,0.7)' />
+                  <ChevronLeft size={18} color={colors.textSecondary} />
                 </View>
-                <Text style={styles.backText}>{t('tutorial.back')}</Text>
+                <Text style={[styles.backText, { color: colors.textSecondary }]}>{t('tutorial.back')}</Text>
               </Pressable>
             ) : (
               <View style={{ flex: 1 }} />
@@ -196,16 +212,23 @@ const styles = StyleSheet.create({
     zIndex: 6,
     paddingHorizontal: 24,
     paddingTop: 16,
-    backgroundColor: 'rgba(8, 12, 10, 0.92)',
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  counter: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
   skipRow: {
-    alignSelf: 'flex-end',
     minHeight: 36,
     justifyContent: 'center',
-    marginBottom: 4,
   },
   skipText: {
-    color: 'rgba(236,253,245,0.7)',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -216,7 +239,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   body: {
-    color: 'rgba(236,253,245,0.86)',
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '400',
@@ -230,14 +252,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 44,
     borderRadius: 999,
-    backgroundColor: 'rgba(27,35,30,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 6,
   },
   langChipText: {
-    color: 'rgba(236,253,245,0.9)',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -254,7 +274,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backText: {
-    color: 'rgba(236,253,245,0.7)',
     fontSize: 15,
     fontWeight: '600',
   },

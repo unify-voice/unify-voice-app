@@ -17,14 +17,9 @@ const OfflineBanner = () => {
 
   return (
     <View
-      pointerEvents='box-none'
       style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 50,
         paddingTop: insets.top,
+        backgroundColor: colors.errorMuted,
       }}
     >
       <View

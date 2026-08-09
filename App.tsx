@@ -27,7 +27,7 @@ import SignToTextScreen from './src/screens/SignToText'
 import SpeechToSignScreen from './src/screens/SpeechToSign'
 import SpeechToTextScreen from './src/screens/SpeechToText'
 import SplashScreen from './src/screens/Splash'
-import { darkColors } from './src/theme/colors'
+import { lightColors } from './src/theme/colors'
 import type { RootStackParamList } from './src/types/navigation'
 import config from './tamagui.config'
 
@@ -71,7 +71,7 @@ function AppNavigator() {
   )
 
   if (!isReady) {
-    return <View style={{ flex: 1, backgroundColor: darkColors.background }} />
+    return <View style={{ flex: 1, backgroundColor: lightColors.background }} />
   }
 
   return (
@@ -110,7 +110,7 @@ function AppNavigator() {
 
 function App() {
   return (
-    <TamaguiProvider config={config} defaultTheme='dark'>
+    <TamaguiProvider config={config} defaultTheme='light'>
       <SafeAreaProvider>
         <ThemeProvider>
           <LanguageProvider>

@@ -17,6 +17,7 @@ import { usePreferences } from '../../context/Preferences'
 import { useAppTheme } from '../../context/Theme'
 import { useBusyLeaveGuard } from '../../hooks/useBusyLeaveGuard'
 import { useKeepAwake } from '../../hooks/useKeepAwake'
+import { translate } from '../../i18n/translations'
 import { cueError, cueListenStart, cueListenStop, cueSuccess } from '../../services/feedback'
 import { addHistoryItem } from '../../services/history'
 import { ensureMicrophonePermission, openAppSettings } from '../../services/mic'
@@ -34,7 +35,7 @@ type Phase = 'idle' | 'listening' | 'processing' | 'success' | 'unsupported' | '
 const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
-  const { t, language, isRTL } = useLanguage()
+  const { t, isRTL } = useLanguage()
   const { conversionLang } = usePreferences()
 
   const [phase, setPhase] = useState<Phase>('idle')
@@ -103,7 +104,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
     try {
       const data = await transcribeSpeechToSign(audioPath, conversionLang)
       if (!mountedRef.current) return
-      const text = displaySpeechText(data)
+      const text = displaySpeechText(data, conversionLang)
       setSpokenText(text)
 
       if (data.found && data.video) {
@@ -115,7 +116,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
         cueSuccess()
         await addHistoryItem({
           type: 'speech-to-sign',
-          text: text || t('sts.title'),
+          text: text || translate(conversionLang, 'sts.title'),
           status: 'success',
           videoUrl: url || undefined,
           conversionLang,
@@ -124,18 +125,18 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
       }
 
       setPhase('unsupported')
-      setErrorMessage(data.message || t('sts.unsupportedBody'))
+      setErrorMessage(translate(conversionLang, 'sts.unsupportedBody'))
       cueError()
       await addHistoryItem({
         type: 'speech-to-sign',
-        text: text || t('sts.unsupported'),
+        text: text || translate(conversionLang, 'sts.unsupported'),
         status: 'unsupported',
         conversionLang,
       })
     } catch (err) {
       if (!mountedRef.current) return
-      const message = err instanceof SpeechApiError ? err.message : t('sts.network')
-      setErrorMessage(message)
+      const network = err instanceof SpeechApiError && err.kind === 'network'
+      setErrorMessage(translate(conversionLang, network ? 'sts.network' : 'sts.failed'))
       setPhase('error')
       cueError()
     }
@@ -164,7 +165,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
       cueListenStart()
     } catch {
       setPhase('error')
-      setErrorMessage(t('sts.network'))
+      setErrorMessage(t('sts.recordFail'))
       cueError()
     }
   }
@@ -178,7 +179,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
       await processAudio(path)
     } catch {
       setPhase('error')
-      setErrorMessage(t('sts.network'))
+      setErrorMessage(t('sts.recordFail'))
       cueError()
     }
   }
@@ -226,6 +227,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
   const micDisabled = phase === 'processing'
   const showSigns = phase === 'idle' || phase === 'unsupported' || phase === 'denied' || phase === 'error'
   const practiceSign = SUPPORTED_SIGNS.find((s) => s.id === practiceId)
+  const phraseLabel = (sign: { en: string; ur: string }) => (conversionLang === 'ur' ? sign.ur : sign.en)
 
   return (
     <Screen padded={false}>
@@ -254,7 +256,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                   onLoad={() => setVideoReady(true)}
                   onEnd={handleVideoEnd}
                   onError={() => {
-                    setErrorMessage(t('sts.videoFail'))
+                    setErrorMessage(translate(conversionLang, 'sts.videoFail'))
                     setVideoReady(false)
                     setPhase('error')
                   }}
@@ -274,7 +276,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
 
             {spokenText ? (
               <View style={styles.spokenActions}>
-                <ResultActions text={spokenText} />
+                <ResultActions text={spokenText} videoUrl={videoUrl} />
                 <Pressable onPress={resetResult} accessibilityRole='button' hitSlop={8}>
                   <Text style={styles.clearBtn}>{t('common.clear')}</Text>
                 </Pressable>
@@ -284,7 +286,11 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
             {phase === 'unsupported' || phase === 'error' || phase === 'denied' ? (
               <View style={styles.errorBlock}>
                 <Text style={styles.errorTitle}>
-                  {phase === 'unsupported' ? t('sts.unsupported') : phase === 'denied' ? t('sts.permission') : t('common.retry')}
+                  {phase === 'unsupported'
+                    ? translate(conversionLang, 'sts.unsupported')
+                    : phase === 'denied'
+                      ? t('sts.permission')
+                      : t('common.retry')}
                 </Text>
                 <Text style={styles.errorBody}>{errorMessage}</Text>
               </View>
@@ -298,10 +304,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                   <View style={styles.practiceBlock}>
                     <Text style={styles.practiceLabel}>{t('sts.practice')}</Text>
                     <Text style={styles.practiceEn} maxFontSizeMultiplier={1.4}>
-                      {practiceSign.en}
-                    </Text>
-                    <Text style={styles.practiceUr} maxFontSizeMultiplier={1.4}>
-                      {practiceSign.ur}
+                      {phraseLabel(practiceSign)}
                     </Text>
                     <Text style={styles.sectionHint}>{t('sts.practiceSay')}</Text>
                   </View>
@@ -309,6 +312,7 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.signRail}>
                   {SUPPORTED_SIGNS.map((sign) => {
                     const selected = practiceId === sign.id
+                    const label = phraseLabel(sign)
                     return (
                       <Pressable
                         key={sign.id}
@@ -316,9 +320,9 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
                         style={[styles.signPill, selected && styles.signPillOn]}
                         accessibilityRole='button'
                         accessibilityState={{ selected }}
-                        accessibilityLabel={`${sign.en}. ${sign.ur}`}
+                        accessibilityLabel={label}
                       >
-                        <Text style={[styles.signPillText, selected && { color: colors.primary }]}>{language === 'ur' ? sign.ur : sign.en}</Text>
+                        <Text style={[styles.signPillText, selected && { color: colors.primary }]}>{label}</Text>
                       </Pressable>
                     )
                   })}
