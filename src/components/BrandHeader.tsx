@@ -9,6 +9,7 @@ type BrandHeaderProps = {
   style?: StyleProp<ViewStyle>
 }
 
+/** Logo + product name block for auth and onboarding headers. */
 const BrandHeader: React.FC<BrandHeaderProps> = ({ subtitle, style }) => {
   const { colors } = useAppTheme()
   const styles = useMemo(

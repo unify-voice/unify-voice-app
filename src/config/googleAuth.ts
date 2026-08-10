@@ -1,3 +1,6 @@
+/**
+ * Google Sign-In bridge for Firebase Auth (Android Play Services + ID token credential).
+ */
 import auth from '@react-native-firebase/auth'
 import { GoogleSignin } from '@react-native-google-signin/google-signin'
 import { Platform } from 'react-native'
@@ -7,6 +10,7 @@ const WEB_CLIENT_ID = '146793157600-qkdgh6hd4cjui3q79osojdfbhrla26o3.apps.google
 
 let configured = false
 
+/** Idempotent GoogleSignin.configure using the Firebase web client ID. */
 export function configureGoogleSignIn() {
   if (configured) return
   GoogleSignin.configure({
@@ -17,6 +21,7 @@ export function configureGoogleSignIn() {
   configured = true
 }
 
+/** Completes Google Sign-In and returns the Firebase user credential. */
 export async function signInWithGoogle() {
   configureGoogleSignIn()
 
@@ -32,6 +37,7 @@ export async function signInWithGoogle() {
   return auth().signInWithCredential(credential)
 }
 
+/** Best-effort Google session clear; safe to call even when Firebase sign-out already ran. */
 export async function signOutGoogle() {
   try {
     configureGoogleSignIn()

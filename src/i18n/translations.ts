@@ -1,3 +1,4 @@
+/** App UI language codes; Urdu also drives RTL layout. */
 export type AppLanguage = 'en' | 'ur'
 
 type Dictionary = Record<string, string>
@@ -501,6 +502,7 @@ const ur: Dictionary = {
 
 const catalogs: Record<AppLanguage, Dictionary> = { en, ur }
 
+/** Looks up a catalog key, falling back to English then the raw key. */
 export function translate(lang: AppLanguage, key: string): string {
   return catalogs[lang][key] ?? catalogs.en[key] ?? key
 }

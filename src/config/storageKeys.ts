@@ -1,3 +1,4 @@
+/** AsyncStorage key namespace for prefs, history, and per-user tutorial/avatar state. */
 export const STORAGE_KEYS = {
   language: '@unifyvoice/language',
   themeMode: '@unifyvoice/theme-mode',

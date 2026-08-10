@@ -1,3 +1,4 @@
+/** Persist dismissal of the one-time Sign-to-Text tips sheet. */
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { STORAGE_KEYS } from '../config/storageKeys'

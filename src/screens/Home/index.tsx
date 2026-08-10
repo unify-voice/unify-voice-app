@@ -24,6 +24,7 @@ import { createStyles } from './styles.module'
 
 type Props = CompositeScreenProps<BottomTabScreenProps<TabParamList, 'HomeScreen'>, NativeStackScreenProps<RootStackParamList>>
 
+/** Main hub: feature tiles, weekly activity, and tour entry points. */
 const HomeScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

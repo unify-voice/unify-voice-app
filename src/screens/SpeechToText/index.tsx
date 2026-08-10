@@ -28,6 +28,7 @@ import { createStyles } from './styles.module'
 type Props = NativeStackScreenProps<RootStackParamList, 'SpeechToTextScreen'>
 type Phase = 'idle' | 'listening' | 'processing' | 'success' | 'empty' | 'error' | 'denied'
 
+/** Records speech and returns a text transcription via the backend. */
 const SpeechToTextScreen: React.FC<Props> = ({ navigation }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

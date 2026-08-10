@@ -32,6 +32,7 @@ import { createStyles } from './styles.modules'
 type Props = NativeStackScreenProps<RootStackParamList, 'SpeechToSignScreen'>
 type Phase = 'idle' | 'listening' | 'processing' | 'success' | 'unsupported' | 'error' | 'denied'
 
+/** Maps spoken phrases to supported sign videos when the phrase is in vocabulary. */
 const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

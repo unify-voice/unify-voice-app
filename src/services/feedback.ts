@@ -1,3 +1,7 @@
+/**
+ * Haptic + short WAV cues for recording and conversion outcomes.
+ * Respects Profile preferences; never throws if Vibration or audio fails.
+ */
 import { Image, Platform, Vibration } from 'react-native'
 import AudioRecorderPlayer from 'react-native-audio-recorder-player'
 
@@ -10,6 +14,7 @@ const cuePlayer = new AudioRecorderPlayer()
 let hapticsEnabled = true
 let soundEnabled = true
 
+/** Sync cue flags from Preferences (called when settings load or change). */
 export const configureFeedback = (next: { haptics: boolean; sound: boolean }) => {
   hapticsEnabled = next.haptics
   soundEnabled = next.sound

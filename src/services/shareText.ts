@@ -1,11 +1,14 @@
+/**
+ * System share / clipboard helpers.
+ * Speech-to-Sign prefers the native ShareMedia module so text + video ship together.
+ */
 import { Clipboard, NativeModules, Platform, Share } from 'react-native'
 
 type ShareMediaNative = {
   share?: (options: { text?: string; url?: string; title?: string }) => Promise<boolean>
 }
 
-const native = NativeModules.ShareMedia as ShareMediaNative | undefined
-
+/** Copy trimmed text to the clipboard. Returns false for empty input. */
 export async function copyText(text: string): Promise<boolean> {
   const value = text.trim()
   if (!value) return false
@@ -17,10 +20,15 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
+/** Share plain text via the system sheet. */
 export async function shareText(text: string, title = 'Unify Voice'): Promise<void> {
   await shareResult({ text, title })
 }
 
+/**
+ * Share conversion output. When `videoUrl` is set, downloads/attaches the clip on
+ * native (ShareMedia) or falls back to Share / text+URL.
+ */
 export async function shareResult(opts: {
   text?: string
   videoUrl?: string | null
@@ -31,6 +39,7 @@ export async function shareResult(opts: {
   const title = opts.title || 'Unify Voice'
   if (!text && !videoUrl) return
 
+  const native = NativeModules.ShareMedia as ShareMediaNative | undefined
   if (videoUrl && native?.share) {
     await native.share({ text, url: videoUrl, title })
     return

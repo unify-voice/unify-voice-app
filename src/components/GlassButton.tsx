@@ -11,6 +11,7 @@ type Props = {
   accessibilityLabel?: string
 }
 
+/** Frosted pill CTA built on `GlassSurface`. */
 const GlassButton = ({ label, onPress, accessibilityLabel }: Props) => {
   const { colors } = useAppTheme()
 

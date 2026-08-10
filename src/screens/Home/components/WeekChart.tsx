@@ -14,6 +14,7 @@ type Props = {
   onPress?: () => void
 }
 
+/** Home week activity bars; tap navigates to Activity when `onPress` is provided. */
 const WeekChart = ({ days, total, onPress }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

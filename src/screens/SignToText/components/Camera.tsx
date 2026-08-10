@@ -34,6 +34,10 @@ const RECORD_SECONDS = 8
 /** Only this landscape matches the model / laptop webcam. The other tilt stays locked. */
 const REQUIRED_HOLD: Orientation = 'landscape-left'
 
+/**
+ * Sign-to-Text capture UI: landscape-left hold gate, 8s front-camera recording,
+ * then top predictions with optional phrase confirmation.
+ */
 const CameraStep = ({ onFinish }: { onFinish: () => void }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

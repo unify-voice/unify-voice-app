@@ -9,6 +9,7 @@ type Props = {
   contentStyle?: StyleProp<ViewStyle>
 }
 
+/** Translucent panel with highlight/stroke used by glass buttons and the tab dock. */
 const GlassSurface = ({ children, style, contentStyle }: Props) => {
   const { colors } = useAppTheme()
 

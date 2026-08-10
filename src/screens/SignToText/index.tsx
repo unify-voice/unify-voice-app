@@ -12,6 +12,7 @@ import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignToTextScreen'>
 
+/** Camera-based sign recognition that resolves labels to localized phrases. */
 const SignToTextScreen: React.FC<Props> = ({ navigation }) => {
   const styles = useThemedStyles(createStyles)
   const fadeAnim = useRef(new Animated.Value(0)).current

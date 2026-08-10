@@ -1,3 +1,7 @@
+/**
+ * Sign-to-Text prediction client.
+ * Uploads a recorded clip to `/predict` and returns the top unique phrase matches.
+ */
 import { API_BASE_URLS } from '../../config'
 import { normalizeConfidence, normalizeSignLabel } from '../constants/signToTextVocab'
 
@@ -10,6 +14,7 @@ export type SignPrediction = {
   confidence: number
 }
 
+/** Guess multipart MIME type from the recorded file extension. */
 const mimeForPath = (path: string) => {
   const lower = path.toLowerCase()
   if (lower.endsWith('.mov')) return 'video/quicktime'
@@ -19,12 +24,14 @@ const mimeForPath = (path: string) => {
   return 'video/mp4'
 }
 
+/** Safe filename for FormData (falls back to `sign.mp4`). */
 const fileNameForPath = (path: string) => {
   const base = path.split('/').pop() || 'sign.mp4'
   const clean = base.split('?')[0]
   return /\.[a-z0-9]+$/i.test(clean) ? clean : 'sign.mp4'
 }
 
+/** Map nginx / FastAPI error bodies (incl. HTML 413/502/504) to readable copy. */
 const messageFromBody = (raw: string, status: number): string => {
   if (status === 413 || /413|entity too large|too large/i.test(raw)) {
     return 'This clip is larger than the Sign to Text server allows (about 1 MB). Raise nginx client_max_body_size, or record a shorter clip.'
@@ -55,6 +62,10 @@ const messageFromBody = (raw: string, status: number): string => {
   return `Prediction failed (${status}). Please try again.`
 }
 
+/**
+ * Predict sign phrases from a local video path.
+ * Returns up to three unique matches sorted by confidence (highest first).
+ */
 export async function predictSignVideo(videoPath: string): Promise<SignPrediction[]> {
   const formData = new FormData()
   const uri = toUploadUri(videoPath)

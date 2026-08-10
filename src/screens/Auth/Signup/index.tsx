@@ -22,6 +22,7 @@ import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignupScreen'>
 
+/** Creates a Firebase email/password account then enters the main app. */
 const SignupScreen: React.FC<Props> = ({ navigation }) => {
   const styles = useThemedStyles(createStyles)
   const { colors, inputTheme } = useAppTheme()

@@ -9,6 +9,7 @@ type NetworkContextValue = {
 
 const NetworkContext = createContext<NetworkContextValue | null>(null)
 
+/** Subscribes to backend reachability probes for the offline banner. */
 export const NetworkProvider = ({ children }: { children: React.ReactNode }) => {
   const [isOffline, setIsOffline] = useState(false)
 
@@ -25,6 +26,7 @@ export const NetworkProvider = ({ children }: { children: React.ReactNode }) => 
   return <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>
 }
 
+/** Offline flag and manual retry; must be under `NetworkProvider`. */
 export const useNetwork = () => {
   const ctx = useContext(NetworkContext)
   if (!ctx) throw new Error('useNetwork must be used within NetworkProvider')

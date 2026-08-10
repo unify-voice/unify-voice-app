@@ -16,6 +16,7 @@ import { directionStyle } from '../utils/rtl'
 const PAD = 8
 const RADIUS = 20
 
+/** Modal coach-mark overlay that masks the screen around the active tour hole. */
 const TourOverlay = () => {
   const tour = useOptionalTour()
   const { t, isRTL } = useLanguage()

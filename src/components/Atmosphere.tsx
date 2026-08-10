@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native'
 
 import { useAppTheme } from '../context/Theme'
 
+/** Soft brand wash + orbs behind auth and marketing surfaces (non-interactive). */
 const Atmosphere = () => {
   const { colors, isDark } = useAppTheme()
   return (

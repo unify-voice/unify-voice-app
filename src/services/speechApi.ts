@@ -1,3 +1,7 @@
+/**
+ * Speech-to-Text and Speech-to-Sign HTTP client.
+ * Posts audio + conversion `language` (`en` | `ur`) to each module's `/transcribe` endpoint.
+ */
 import { API_BASE_URLS } from '../../config'
 import type { AppLanguage } from '../i18n/translations'
 
@@ -34,6 +38,7 @@ type TranscribeErrorBody = {
       }
 }
 
+/** RN FormData file part for multipart upload. */
 const audioFile = (uri: string) =>
   ({
     uri: toUploadUri(uri),
@@ -41,6 +46,7 @@ const audioFile = (uri: string) =>
     type: 'audio/m4a',
   }) as any
 
+/** Typed error so screens can distinguish network vs server failures. */
 export class SpeechApiError extends Error {
   constructor(
     message: string,
@@ -50,6 +56,7 @@ export class SpeechApiError extends Error {
   }
 }
 
+/** Prefer FastAPI `detail.message` (or string detail) over a generic fallback. */
 const messageFromDetail = (data: TranscribeErrorBody | null, fallback: string): string => {
   const detail = data?.detail
   if (typeof detail === 'string' && detail.trim()) return detail
@@ -87,12 +94,18 @@ async function postTranscribe<T>(base: string, uri: string, language: AppLanguag
   return data
 }
 
+/** Transcribe speech for the Speech-to-Text module. */
 export const transcribeSpeechToText = (uri: string, language: AppLanguage) =>
   postTranscribe<SpeechToTextResult>(API_BASE_URLS.speechToText, uri, language)
 
+/** Transcribe speech and resolve a supported sign clip for Speech-to-Sign. */
 export const transcribeSpeechToSign = (uri: string, language: AppLanguage) =>
   postTranscribe<SpeechToSignResult>(API_BASE_URLS.speechToSign, uri, language)
 
+/**
+ * User-facing transcript text.
+ * Prefers `text`; never falls back to Roman Urdu when conversion language is `ur`.
+ */
 export function displaySpeechText(
   result: { text?: string; roman_urdu?: string },
   lang?: AppLanguage,
@@ -103,6 +116,7 @@ export function displaySpeechText(
   return (result.roman_urdu || '').trim()
 }
 
+/** Absolute URL for a sign video path returned by the STS API. */
 export function signVideoUrl(path?: string): string | null {
   if (!path) return null
   if (path.startsWith('http://') || path.startsWith('https://')) return path

@@ -13,6 +13,7 @@ type Props = {
   style?: StyleProp<ViewStyle>
 }
 
+/** Raised circular control used for record / primary action affordances. */
 const ClayControl = ({ children, onPress, disabled, active, size = 88, accessibilityLabel, style }: Props) => {
   const { colors, isDark } = useAppTheme()
 

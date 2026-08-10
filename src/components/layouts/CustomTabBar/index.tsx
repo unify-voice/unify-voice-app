@@ -15,6 +15,7 @@ const TAB_TOUR_ID: Partial<Record<string, TourStepId>> = {
   ActivityScreen: 'activityTab',
 }
 
+/** Glass bottom dock; registers tab navigation for the live product tour. */
 const CustomTabBar = ({ navigation }: { navigation: any }) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

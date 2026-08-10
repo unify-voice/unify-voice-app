@@ -1,3 +1,6 @@
+/**
+ * Profile photo cache (AsyncStorage) and Firebase Storage upload helpers.
+ */
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import storage from '@react-native-firebase/storage'
 import { Platform } from 'react-native'
@@ -7,6 +10,7 @@ import { STORAGE_KEYS } from '../config/storageKeys'
 
 const cacheKey = (uid: string) => STORAGE_KEYS.avatar(uid)
 
+/** Build a data URI from raw or already-prefixed base64. */
 export const toDataUri = (base64: string, mime = 'image/jpeg') => {
   const clean = base64.includes(',') ? base64.split(',').pop()! : base64
   return `data:${mime};base64,${clean}`
@@ -28,6 +32,7 @@ export async function clearCachedAvatar(uid: string): Promise<void> {
   await AsyncStorage.removeItem(cacheKey(uid))
 }
 
+/** Request gallery access when required (iOS PHPicker still works with limited access). */
 export async function ensurePhotoLibraryPermission(): Promise<boolean> {
   if (Platform.OS === 'ios') {
     const status = await check(PERMISSIONS.IOS.PHOTO_LIBRARY)
@@ -49,6 +54,7 @@ export async function ensurePhotoLibraryPermission(): Promise<boolean> {
   return next === RESULTS.GRANTED || next === RESULTS.LIMITED || next === RESULTS.UNAVAILABLE
 }
 
+/** Map Firebase Storage failures to actionable user-facing copy. */
 export function mapStorageError(err: unknown): string {
   const code = (err as { code?: string })?.code || ''
   const message = (err as { message?: string })?.message || ''
@@ -90,6 +96,7 @@ async function readUriAsBase64(uri: string): Promise<string | null> {
   }
 }
 
+/** Upload base64 image bytes to `avatars/{uid}.jpg` and return the download URL. */
 export async function uploadAvatarImage(uid: string, base64: string, mime = 'image/jpeg'): Promise<string> {
   const clean = base64.includes(',') ? base64.split(',').pop()! : base64
   const contentType = mime.startsWith('image/') ? mime : 'image/jpeg'
@@ -98,6 +105,10 @@ export async function uploadAvatarImage(uid: string, base64: string, mime = 'ima
   return ref.getDownloadURL()
 }
 
+/**
+ * Upload from an image-picker asset.
+ * Prefers base64; falls back to `putFile` when only a local URI is available.
+ */
 export async function uploadAvatarFromAsset(
   uid: string,
   asset: { base64?: string; uri?: string; type?: string },

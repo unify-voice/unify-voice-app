@@ -19,6 +19,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 const { width } = Dimensions.get('window')
 const logoSize = Math.min(88, width * 0.2)
 
+/** Boot gate: waits for prefs/auth readiness then routes to onboarding or main. */
 const SplashScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

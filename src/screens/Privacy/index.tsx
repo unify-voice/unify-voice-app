@@ -22,6 +22,7 @@ const SECTIONS = [
   ['privacy.notTitle', 'privacy.notBody'],
 ] as const
 
+/** Explains what data stays on-device versus Firebase. */
 const PrivacyScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

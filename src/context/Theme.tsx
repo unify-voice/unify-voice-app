@@ -26,6 +26,7 @@ const resolveIsDark = (mode: ThemeMode, systemScheme: ColorSchemeName) => {
   return mode === 'dark'
 }
 
+/** Persists light/dark/system preference and exposes the active palette + StatusBar sync. */
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const systemScheme = useColorScheme()
   const [mode, setModeState] = useState<ThemeMode>('light')
@@ -87,6 +88,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
+/** Theme tokens and mode setters; must be under `ThemeProvider`. */
 export const useAppTheme = () => {
   const ctx = useContext(ThemeContext)
   if (!ctx) {

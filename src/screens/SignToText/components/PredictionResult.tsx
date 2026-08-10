@@ -29,6 +29,7 @@ const bandHintKey = (band: ConfidenceBand) => {
   return 's2t.unsure'
 }
 
+/** Shows the top prediction, confidence band, and alternate “did you mean” chips. */
 const PredictionResult = ({ predictions, selectedIndex, conversionLang, onSelect }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

@@ -1,5 +1,5 @@
 /**
- * Shared Firebase Auth error messages for consistent UX.
+ * Maps Firebase Auth error codes to short, user-facing copy for login/signup flows.
  */
 export const mapAuthError = (code?: string, fallback = 'Something went wrong. Try again.') => {
   if (!code) return fallback

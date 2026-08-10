@@ -27,6 +27,7 @@ const FAQ_KEYS = [
   ['help.q8', 'help.a8'],
 ] as const
 
+/** FAQ covering conversions, languages, and offline behavior. */
 const HelpScreen = ({ navigation }: Props) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

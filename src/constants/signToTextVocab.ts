@@ -29,16 +29,19 @@ export type ConfidenceBand = 'high' | 'medium' | 'low'
 
 const byId = new Map(SIGN_TO_TEXT_PHRASES.map((p) => [p.id, p]))
 
+/** Canonicalizes model/API labels so id and English title lookups share one key space. */
 export function normalizeSignLabel(raw: string): string {
   return raw.trim().toLowerCase().replace(/['’]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
 }
 
+/** Clamps scores to 0–1, treating 0–100 percentages as fractions when needed. */
 export function normalizeConfidence(value: number): number {
   if (!Number.isFinite(value) || value <= 0) return 0
   const n = value > 1 && value <= 100 ? value / 100 : value
   return Math.min(1, n)
 }
 
+/** Maps a confidence score onto high / medium / low UI bands. */
 export function confidenceBand(value: number): ConfidenceBand {
   const c = normalizeConfidence(value)
   if (c >= CONFIDENCE_HIGH) return 'high'
@@ -46,6 +49,7 @@ export function confidenceBand(value: number): ConfidenceBand {
   return 'low'
 }
 
+/** Resolves a raw model label to a known phrase by id, then by English title. */
 export function findSignPhrase(raw: string): SignToTextPhrase | undefined {
   const id = normalizeSignLabel(raw)
   if (!id) return undefined
@@ -54,6 +58,7 @@ export function findSignPhrase(raw: string): SignToTextPhrase | undefined {
   return SIGN_TO_TEXT_PHRASES.find((p) => normalizeSignLabel(p.en) === id)
 }
 
+/** Localized phrase text for UI; falls back to a cleaned raw label when unknown. */
 export function displaySignPhrase(raw: string, lang: AppLanguage): string {
   const phrase = findSignPhrase(raw)
   if (phrase) return lang === 'ur' ? phrase.ur : phrase.en

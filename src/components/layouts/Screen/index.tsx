@@ -16,6 +16,7 @@ interface ScreenProps {
   applyDirection?: boolean
 }
 
+/** Safe-area screen shell with optional padding and RTL direction. */
 const Screen = ({ children, style, padded = true, applyDirection = true }: ScreenProps) => {
   const styles = useThemedStyles(createStyles)
   const { isRTL } = useLanguage()

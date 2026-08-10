@@ -27,6 +27,7 @@ const formatWhen = (ts: number) => {
   }
 }
 
+/** Device-local conversion history for the signed-in user. */
 const ActivityScreen = (_props: Props) => {
   const styles = useThemedStyles(createStyles)
   const { t, isRTL } = useLanguage()

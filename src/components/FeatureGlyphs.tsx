@@ -6,6 +6,7 @@ type GlyphProps = {
   size?: number
 }
 
+/** Home feature tile icon for Sign to Text. */
 export const SignToTextGlyph = ({ color = '#22c55e', size = 26 }: GlyphProps) => (
   <Svg width={size} height={size} viewBox='0 0 24 24' fill='none'>
     <Path
@@ -39,6 +40,7 @@ export const SignToTextGlyph = ({ color = '#22c55e', size = 26 }: GlyphProps) =>
   </Svg>
 )
 
+/** Home feature tile icon for Speech to Sign. */
 export const SpeechToSignGlyph = ({ color = '#22c55e', size = 26 }: GlyphProps) => (
   <Svg width={size} height={size} viewBox='0 0 24 24' fill='none'>
     <Rect x='3' y='5' width='18' height='14' rx='3.5' stroke={color} strokeWidth={2.15} />
@@ -46,6 +48,7 @@ export const SpeechToSignGlyph = ({ color = '#22c55e', size = 26 }: GlyphProps) 
   </Svg>
 )
 
+/** Home feature tile icon for Speech to Text. */
 export const SpeechToTextGlyph = ({ color = '#22c55e', size = 26 }: GlyphProps) => (
   <Svg width={size} height={size} viewBox='0 0 24 24' fill='none'>
     <Path

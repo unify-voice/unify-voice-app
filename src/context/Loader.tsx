@@ -14,8 +14,10 @@ const LoaderContext = createContext<LoaderContextType>({
   hide: () => {},
 })
 
+/** Global blocking spinner show/hide. */
 export const useLoader = () => useContext(LoaderContext)
 
+/** Full-screen animated loader overlay controlled via `useLoader`. */
 export const LoaderProvider = ({ children }: { children: React.ReactNode }) => {
   const [visible, setVisible] = useState(false)
   const { colors } = useAppTheme()

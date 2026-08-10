@@ -1,3 +1,7 @@
+/**
+ * Per-account conversion history stored in AsyncStorage (no remote database).
+ * Capped at 50 items; keys are scoped by Firebase Auth uid.
+ */
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import auth from '@react-native-firebase/auth'
 
@@ -21,6 +25,7 @@ const MAX_ITEMS = 50
 
 const currentUid = () => auth().currentUser?.uid ?? null
 
+/** One-time move from the pre-uid global history key into the current user's key. */
 async function migrateLegacyHistory(uid: string): Promise<void> {
   try {
     const key = STORAGE_KEYS.history(uid)
@@ -45,6 +50,7 @@ async function historyKey(): Promise<string | null> {
   return STORAGE_KEYS.history(uid)
 }
 
+/** Load history for the signed-in user (empty if signed out). */
 export async function loadHistory(): Promise<HistoryItem[]> {
   try {
     const key = await historyKey()
@@ -58,6 +64,7 @@ export async function loadHistory(): Promise<HistoryItem[]> {
   }
 }
 
+/** Prepend a conversion result; returns the created entry even when signed out. */
 export async function addHistoryItem(item: Omit<HistoryItem, 'id' | 'createdAt'>): Promise<HistoryItem> {
   const entry: HistoryItem = {
     ...item,
@@ -72,6 +79,7 @@ export async function addHistoryItem(item: Omit<HistoryItem, 'id' | 'createdAt'>
   return entry
 }
 
+/** Patch fields on an existing history row (e.g. confirmed Sign-to-Text phrase). */
 export async function updateHistoryItem(
   id: string,
   patch: Partial<Pick<HistoryItem, 'text' | 'status' | 'confidence'>>,
@@ -83,6 +91,7 @@ export async function updateHistoryItem(
   await AsyncStorage.setItem(key, JSON.stringify(next))
 }
 
+/** Clear history for the currently signed-in account. */
 export async function clearHistory(): Promise<void> {
   const uid = currentUid()
   if (uid) await clearUserHistory(uid)
@@ -92,12 +101,14 @@ export async function clearUserHistory(uid: string): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEYS.history(uid))
 }
 
+/** i18n key for an Activity row type label. */
 export function historyTypeKey(type: ConversionType): string {
   if (type === 'speech-to-text') return 'activity.speechToText'
   if (type === 'speech-to-sign') return 'activity.speechToSign'
   return 'activity.signToText'
 }
 
+/** Local Monday 00:00 timestamp used by the Home week chart. */
 export function startOfLocalWeek(now = new Date()): number {
   const d = new Date(now)
   const day = d.getDay()
@@ -107,6 +118,7 @@ export function startOfLocalWeek(now = new Date()): number {
   return d.getTime()
 }
 
+/** Count conversions since the start of the local week. */
 export function countHistoryThisWeek(items: HistoryItem[]): number {
   const from = startOfLocalWeek()
   return items.filter((item) => item.createdAt >= from).length
@@ -125,6 +137,7 @@ export function weekDayLabelKey(index: number): string {
   return DAY_MS_KEYS[index] ?? DAY_MS_KEYS[0]
 }
 
+/** Build Mon–Sun bar data for the Home week chart (equal day spacing). */
 export function weekDayStats(items: HistoryItem[], now = new Date()): WeekDayStat[] {
   const weekStart = startOfLocalWeek(now)
   const today = new Date(now)

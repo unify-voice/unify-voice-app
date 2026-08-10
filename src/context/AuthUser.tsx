@@ -21,6 +21,7 @@ const snapshot = (user: FirebaseAuthTypes.User | null, photoOverride?: string | 
 
 const AuthUserContext = createContext<AuthUserContextValue | null>(null)
 
+/** Mirrors Firebase Auth + cached avatar for profile chrome across the app. */
 export const AuthUserProvider = ({ children }: { children: React.ReactNode }) => {
   const [state, setState] = useState(() => snapshot(auth().currentUser))
 
@@ -76,6 +77,7 @@ export const AuthUserProvider = ({ children }: { children: React.ReactNode }) =>
   return <AuthUserContext.Provider value={value}>{children}</AuthUserContext.Provider>
 }
 
+/** Signed-in user snapshot; must be under `AuthUserProvider`. */
 export const useAuthUser = () => {
   const ctx = useContext(AuthUserContext)
   if (!ctx) throw new Error('useAuthUser must be used within AuthUserProvider')

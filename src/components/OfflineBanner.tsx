@@ -7,6 +7,7 @@ import { useLanguage } from '../context/Language'
 import { useNetwork } from '../context/Network'
 import { useAppTheme } from '../context/Theme'
 
+/** Safe-area offline alert with retry; hidden when the network probe succeeds. */
 const OfflineBanner = () => {
   const { isOffline, retryConnection } = useNetwork()
   const { t } = useLanguage()

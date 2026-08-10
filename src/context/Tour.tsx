@@ -23,6 +23,7 @@ type TourContextValue = {
 
 const TourContext = createContext<TourContextValue | null>(null)
 
+/** Drives the spotlight walkthrough: steps, hole rects, and tab jumps. */
 export const TourProvider = ({ children }: { children: React.ReactNode }) => {
   const [active, setActive] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
@@ -124,12 +125,14 @@ export const TourProvider = ({ children }: { children: React.ReactNode }) => {
   return <TourContext.Provider value={value}>{children}</TourContext.Provider>
 }
 
+/** Active tour controls; must be under `TourProvider`. */
 export const useTour = () => {
   const ctx = useContext(TourContext)
   if (!ctx) throw new Error('useTour must be used within TourProvider')
   return ctx
 }
 
+/** Same as `useTour` but returns null outside the provider (safe for shared chrome). */
 export const useOptionalTour = () => useContext(TourContext)
 
 type TargetProps = {
@@ -138,6 +141,7 @@ type TargetProps = {
   style?: ViewStyle
 }
 
+/** Measures its window rect so the overlay can cut a hole for this step id. */
 export const TourTarget = ({ id, children, style }: TargetProps) => {
   const tour = useOptionalTour()
   const ref = useRef<View>(null)

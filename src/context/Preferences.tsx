@@ -30,6 +30,7 @@ type PreferencesContextValue = {
 
 const PreferencesContext = createContext<PreferencesContextValue | null>(null)
 
+/** Persists conversion language, haptics, and sound cues; wires feedback config. */
 export const PreferencesProvider = ({ children }: { children: React.ReactNode }) => {
   const { language } = useLanguage()
   const [conversionLang, setConversionLangState] = useState<AppLanguage>('en')
@@ -99,6 +100,7 @@ export const PreferencesProvider = ({ children }: { children: React.ReactNode })
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>
 }
 
+/** Conversion/feedback prefs; must be under `PreferencesProvider`. */
 export const usePreferences = () => {
   const ctx = useContext(PreferencesContext)
   if (!ctx) throw new Error('usePreferences must be used within PreferencesProvider')

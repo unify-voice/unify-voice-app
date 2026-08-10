@@ -1,3 +1,4 @@
+/** Persist whether the live Home tutorial has been completed for a user. */
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { STORAGE_KEYS } from '../config/storageKeys'

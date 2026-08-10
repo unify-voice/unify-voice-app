@@ -12,6 +12,7 @@ type Props = {
   videoUrl?: string | null
 }
 
+/** Copy / share controls for conversion results (text and optional video URL). */
 const ResultActions = ({ text, videoUrl }: Props) => {
   const { t } = useLanguage()
   const { colors } = useAppTheme()

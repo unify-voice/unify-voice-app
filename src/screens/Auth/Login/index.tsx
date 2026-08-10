@@ -22,6 +22,7 @@ import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>
 
+/** Email/password and Google sign-in entry into the app. */
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const styles = useThemedStyles(createStyles)
   const { colors, inputTheme } = useAppTheme()

@@ -16,6 +16,7 @@ const STORAGE_KEY = STORAGE_KEYS.language
 
 const LanguageContext = createContext<LanguageContextValue | null>(null)
 
+/** Loads/saves UI language and exposes `t()` plus RTL flag. */
 export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
   const [language, setLanguageState] = useState<AppLanguage>('en')
   const [isReady, setIsReady] = useState(false)
@@ -60,6 +61,7 @@ export const LanguageProvider = ({ children }: { children: React.ReactNode }) =>
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>
 }
 
+/** Current language, translator, and RTL; must be under `LanguageProvider`. */
 export const useLanguage = () => {
   const ctx = useContext(LanguageContext)
   if (!ctx) throw new Error('useLanguage must be used within LanguageProvider')

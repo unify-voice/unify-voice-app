@@ -22,6 +22,7 @@ interface Slide {
   description: string
 }
 
+/** First-launch carousel introducing Unify Voice before auth. */
 const OnboardingScreen = ({ navigation }: Props) => {
   const { colors } = useAppTheme()
   const [activeIndex, setActiveIndex] = useState(0)

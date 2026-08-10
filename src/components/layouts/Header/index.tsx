@@ -13,6 +13,7 @@ type HeaderProps = {
   onProfilePress?: () => void
 }
 
+/** Home brand row with avatar / initials shortcut into Profile. */
 const Header = ({ onProfilePress }: HeaderProps) => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()

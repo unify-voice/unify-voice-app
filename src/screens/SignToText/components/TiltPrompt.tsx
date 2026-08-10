@@ -8,6 +8,7 @@ import { useThemedStyles } from '../../../theme'
 
 import { createStyles } from '../styles.module'
 
+/** Animated “tilt phone landscape-left” coach shown before Sign-to-Text recording unlocks. */
 const TiltPrompt = () => {
   const styles = useThemedStyles(createStyles)
   const { colors } = useAppTheme()
