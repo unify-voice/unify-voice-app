@@ -1,182 +1,147 @@
 import { StyleSheet } from 'react-native'
 
-const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 52,
-    paddingBottom: 36,
-  },
+import type { ThemeColors } from '../../../theme'
 
-  ambientGlow: {
-    position: 'absolute',
-    width: 380,
-    height: 280,
-    borderRadius: 190,
-    top: -60,
-    alignSelf: 'center',
-    backgroundColor: 'transparent',
-    shadowColor: '#22c55e',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.22,
-    shadowRadius: 80,
-  },
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    root: { flex: 1 },
+    scroll: {
+      flexGrow: 1,
+      paddingHorizontal: 24,
+      paddingTop: 28,
+      paddingBottom: 40,
+    },
+    brandUnify: {
+      fontSize: 20,
+      fontWeight: '900',
+      color: c.textPrimary,
+      letterSpacing: 1,
+    },
+    brandVoice: {
+      fontSize: 20,
+      fontWeight: '900',
+      color: c.primary,
+      letterSpacing: 1,
+    },
+    brandSub: {
+      fontSize: 14,
+      color: c.textSecondary,
+      fontWeight: '400',
+      marginTop: 8,
+      lineHeight: 20,
+      maxWidth: 300,
+    },
+    screenTitle: {
+      fontSize: 32,
+      fontWeight: '800',
+      color: c.textPrimary,
+      letterSpacing: -0.8,
+      marginTop: 28,
+      marginBottom: 8,
+    },
+    screenSub: {
+      fontSize: 15,
+      color: c.textSecondary,
+      fontWeight: '400',
+      lineHeight: 22,
+      marginBottom: 28,
+      maxWidth: 320,
+    },
+    errText: {
+      fontSize: 13,
+      color: c.errorText,
+      marginBottom: 16,
+      lineHeight: 18,
+    },
+    fieldLabel: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: c.primary,
+      marginBottom: 8,
+    },
+    input: {
+      backgroundColor: c.clay,
+      fontSize: 15,
+      height: 52,
+      borderRadius: 16,
+      marginBottom: 4,
+    },
+    fieldErr: {
+      fontSize: 12,
+      color: c.errorText,
+      marginTop: 4,
+      marginBottom: 4,
+    },
+    forgotText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: c.primary,
+    },
+    primaryBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 999,
+      minHeight: 52,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 22,
+      shadowColor: c.primary,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.35,
+      shadowRadius: 14,
+      elevation: 6,
+    },
+    primaryBtnText: {
+      fontSize: 15,
+      fontWeight: '800',
+      color: c.textOnPrimary,
+    },
+    dividerLine: {
+      flex: 1,
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.divider,
+    },
+    dividerText: {
+      fontSize: 12,
+      color: c.textMuted,
+      fontWeight: '500',
+    },
+    socialBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: c.clay,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.primaryBorder,
+      borderRadius: 999,
+      minHeight: 48,
+    },
+    socialBtnText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: c.textPrimary,
+    },
+    footerText: {
+      fontSize: 14,
+      color: c.textSecondary,
+    },
+    footerLink: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: c.primary,
+    },
+    secondaryBtnText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: c.textSecondary,
+    },
+    successText: {
+      fontSize: 14,
+      color: c.primary,
+      lineHeight: 20,
+      marginBottom: 16,
+    },
+  })
 
-  brandUnify: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#f0f0f0',
-    letterSpacing: 1,
-  },
-
-  brandVoice: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#22c55e',
-    letterSpacing: 1,
-    textShadowColor: 'rgba(34,197,94,0.5)',
-    textShadowRadius: 14,
-    textShadowOffset: { width: 0, height: 0 },
-  },
-
-  brandSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.35)',
-    fontWeight: '300',
-    marginTop: 5,
-    lineHeight: 18,
-  },
-
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 20,
-    padding: 22,
-  },
-
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#f0f0f0',
-    marginBottom: 4,
-  },
-
-  cardSub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.35)',
-    fontWeight: '300',
-    marginBottom: 18,
-    lineHeight: 18,
-  },
-
-  generalErr: {
-    backgroundColor: 'rgba(220,38,38,0.08)',
-    borderLeftWidth: 3,
-    borderLeftColor: 'rgba(220,38,38,0.6)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-
-  errText: {
-    fontSize: 12,
-    color: '#f87171',
-  },
-
-  fieldLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    color: '#22c55e',
-    opacity: 0.8,
-    marginBottom: 6,
-  },
-
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    fontSize: 13,
-    height: 48,
-  },
-
-  fieldErr: {
-    fontSize: 11,
-    color: '#f87171',
-    marginTop: 4,
-    marginBottom: 2,
-  },
-
-  forgotText: {
-    fontSize: 11,
-    color: 'rgba(34,197,94,0.6)',
-    letterSpacing: 0.3,
-  },
-
-  primaryBtn: {
-    backgroundColor: 'rgba(34,197,94,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.4)',
-    borderRadius: 999,
-    paddingVertical: 13,
-    alignItems: 'center',
-    marginTop: 14,
-    shadowColor: '#22c55e',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-  },
-
-  primaryBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    color: '#22c55e',
-  },
-
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-
-  dividerText: {
-    fontSize: 9,
-    color: 'rgba(255,255,255,0.25)',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
-
-  socialBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 10,
-    paddingVertical: 11,
-  },
-
-  socialBtnText: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.55)',
-  },
-
-  footerText: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.3)',
-  },
-
-  footerLink: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#22c55e',
-  },
-})
-
-export { styles }
+export { createStyles }

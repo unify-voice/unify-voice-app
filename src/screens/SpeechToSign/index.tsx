@@ -1,357 +1,197 @@
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { CircleStop, Mic, Pause, Play } from '@tamagui/lucide-icons-2'
 import React, { useEffect, useRef, useState } from 'react'
-import { PermissionsAndroid, Platform, Animated, Pressable, ScrollView, View, Text as RNText, Image, Modal, StyleSheet } from 'react-native'
-import AudioRecorderPlayer from 'react-native-audio-recorder-player'
+import { Alert, Animated, Image, Pressable, ScrollView, View } from 'react-native'
 import Video, { type VideoRef } from 'react-native-video'
-import { Text, XStack, YStack } from 'tamagui'
+import { Text, YStack } from 'tamagui'
 
-import { API_BASE_URL } from '../../../config'
 import defaultAvatar from '../../assets/speech-to-sign-avatar.png'
+import Atmosphere from '../../components/Atmosphere'
+import ClayControl from '../../components/ClayControl'
+import GlassButton from '../../components/GlassButton'
+import ResultActions from '../../components/ResultActions'
 import Screen from '../../components/layouts/Screen'
+import { SUPPORTED_SIGNS } from '../../constants/supportedSigns'
+import { useLanguage } from '../../context/Language'
+import { usePreferences } from '../../context/Preferences'
+import { useAppTheme } from '../../context/Theme'
+import { useBusyLeaveGuard } from '../../hooks/useBusyLeaveGuard'
+import { useKeepAwake } from '../../hooks/useKeepAwake'
+import { translate } from '../../i18n/translations'
+import { cueError, cueListenStart, cueListenStop, cueSuccess } from '../../services/feedback'
+import { addHistoryItem } from '../../services/history'
+import { ensureMicrophonePermission, openAppSettings } from '../../services/mic'
+import { discardAppRecorder, startAppRecorder, stopAppRecorder } from '../../services/recorder'
+import { displaySpeechText, signVideoUrl, SpeechApiError, transcribeSpeechToSign } from '../../services/speechApi'
+import { useThemedStyles } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
+import { directionStyle } from '../../utils/rtl'
 
-import { styles } from './styles.modules'
+import { createStyles } from './styles.modules'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SpeechToSignScreen'>
+type Phase = 'idle' | 'listening' | 'processing' | 'success' | 'unsupported' | 'error' | 'denied'
 
-const audioRecorderPlayer = new AudioRecorderPlayer()
-
-const GREEN = '#22c55e'
-const BLUE = '#3b82f6'
-const CARD_BG = '#1e293b'
-const BORDER = '#334155'
-
-// ── Guide steps ──────────────────────────────────────────────────────────────
-const GUIDE_STEPS = [
-  {
-    icon: '🎙️',
-    title: 'Tap to speak',
-    body: 'Press the microphone button and say a phrase — in English or Urdu. The button pulses while it listens.',
-  },
-  {
-    icon: '⏹️',
-    title: 'Tap again to stop',
-    body: 'Tap the mic a second time to finish recording. Your audio is sent for transcription automatically.',
-  },
-  {
-    icon: '🤟',
-    title: 'Watch the sign',
-    body: 'If a matching sign exists, the video plays instantly. Use ▶️ / ⏸️ to control it, or replay once it ends.',
-  },
-  {
-    icon: '🔄',
-    title: 'Try again',
-    body: 'Tap Clear to reset and record a new phrase. Supported phrases are shown in both English and Urdu.',
-  },
-]
-
-// ── Onboarding modal ─────────────────────────────────────────────────────────
-const GuideModal: React.FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
-  const [step, setStep] = useState(0)
-  const slideAnim = useRef(new Animated.Value(0)).current
-  const fadeAnim = useRef(new Animated.Value(1)).current
-
-  const animateToStep = (next: number) => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: -30, duration: 150, useNativeDriver: true }),
-    ]).start(() => {
-      setStep(next)
-      slideAnim.setValue(30)
-      Animated.parallel([
-        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-      ]).start()
-    })
-  }
-
-  const next = () => {
-    if (step < GUIDE_STEPS.length - 1) animateToStep(step + 1)
-    else onClose()
-  }
-
-  const prev = () => {
-    if (step > 0) animateToStep(step - 1)
-  }
-
-  const current = GUIDE_STEPS[step]
-  const isLast = step === GUIDE_STEPS.length - 1
-
-  return (
-    <Modal visible={visible} transparent animationType='fade' onRequestClose={onClose}>
-      <View style={guide.overlay}>
-        <View style={guide.sheet}>
-          {/* Header */}
-          <View style={guide.header}>
-            <RNText style={guide.headerLabel}>How it works</RNText>
-            <Pressable onPress={onClose} hitSlop={12}>
-              <RNText style={guide.skipBtn}>Skip</RNText>
-            </Pressable>
-          </View>
-
-          {/* Step dots */}
-          <XStack jc='center' gap='$2' mb='$5'>
-            {GUIDE_STEPS.map((_, i) => (
-              <View key={i} style={[guide.dot, i === step ? guide.dotActive : guide.dotInactive]} />
-            ))}
-          </XStack>
-
-          {/* Animated step content */}
-          <Animated.View style={[guide.stepContent, { opacity: fadeAnim, transform: [{ translateX: slideAnim }] }]}>
-            {/* Icon bubble */}
-            <View style={guide.iconBubble}>
-              <RNText style={guide.iconText}>{current.icon}</RNText>
-            </View>
-
-            <RNText style={guide.stepTitle}>{current.title}</RNText>
-            <RNText style={guide.stepBody}>{current.body}</RNText>
-          </Animated.View>
-
-          {/* Step counter */}
-          <RNText style={guide.counter}>
-            {step + 1} of {GUIDE_STEPS.length}
-          </RNText>
-
-          {/* Navigation buttons */}
-          <XStack gap='$3' mt='$4'>
-            {step > 0 ? (
-              <Pressable onPress={prev} style={[guide.btn, guide.btnSecondary]}>
-                <RNText style={guide.btnSecondaryText}>Back</RNText>
-              </Pressable>
-            ) : (
-              <View style={{ flex: 1 }} />
-            )}
-
-            <Pressable onPress={next} style={[guide.btn, guide.btnPrimary]}>
-              <RNText style={guide.btnPrimaryText}>{isLast ? 'Get started' : 'Next'}</RNText>
-            </Pressable>
-          </XStack>
-        </View>
-      </View>
-    </Modal>
-  )
-}
-
-// ── Guide styles ──────────────────────────────────────────────────────────────
-const guide = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.75)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: CARD_BG,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 36,
-    borderTopWidth: 1,
-    borderColor: BORDER,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  headerLabel: {
-    color: '#94a3b8',
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  skipBtn: {
-    color: '#64748b',
-    fontSize: 14,
-  },
-  dot: {
-    height: 6,
-    borderRadius: 3,
-  },
-  dotActive: {
-    width: 24,
-    backgroundColor: GREEN,
-  },
-  dotInactive: {
-    width: 6,
-    backgroundColor: BORDER,
-  },
-  stepContent: {
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    minHeight: 210,
-  },
-  iconBubble: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: '#0f172a',
-    borderWidth: 2,
-    borderColor: BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  iconText: {
-    fontSize: 38,
-  },
-  stepTitle: {
-    color: '#f1f5f9',
-    fontSize: 22,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 10,
-    letterSpacing: -0.3,
-  },
-  stepBody: {
-    color: '#94a3b8',
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  counter: {
-    color: '#475569',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 18,
-  },
-  btn: {
-    flex: 1,
-    height: 50,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnPrimary: {
-    backgroundColor: GREEN,
-  },
-  btnPrimaryText: {
-    color: '#000',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  btnSecondary: {
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
-  btnSecondaryText: {
-    color: '#94a3b8',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-})
-
-// ── Main screen ───────────────────────────────────────────────────────────────
 const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
-  const [isListening, setIsListening] = useState(false)
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
+  const { t, isRTL } = useLanguage()
+  const { conversionLang } = usePreferences()
+
+  const [phase, setPhase] = useState<Phase>('idle')
   const [spokenText, setSpokenText] = useState('')
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
-  const [message, setMessage] = useState('')
-  const [isUploading, setIsUploading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [isPaused, setIsPaused] = useState(false)
   const [videoReady, setVideoReady] = useState(false)
   const [videoEnded, setVideoEnded] = useState(false)
-  const [showGuide, setShowGuide] = useState(true) // show on first visit
+  const [lastAudioPath, setLastAudioPath] = useState('')
+  const [practiceId, setPracticeId] = useState<string | null>(null)
 
   const videoRef = useRef<VideoRef | null>(null)
   const fadeAnim = useRef(new Animated.Value(0)).current
-  const scaleAnim = useRef(new Animated.Value(0.98)).current
   const pulseAnim = useRef(new Animated.Value(1)).current
-  const controlsAnim = useRef(new Animated.Value(0)).current
+  const mountedRef = useRef(true)
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }),
-    ]).start()
-  }, [fadeAnim, scaleAnim])
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      void discardAppRecorder()
+    }
+  }, [])
+
+  const busy = phase === 'listening' || phase === 'processing'
+  useKeepAwake(phase === 'listening' || phase === 'processing')
+  useBusyLeaveGuard(navigation, busy, {
+    title: t('session.leaveTitle'),
+    message: phase === 'listening' ? t('session.leaveListening') : t('session.leaveProcessing'),
+    stayLabel: t('session.stay'),
+    leaveLabel: t('session.leave'),
+    onDiscard: discardAppRecorder,
+  })
 
   useEffect(() => {
-    if (isListening) {
-      Animated.loop(
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start()
+  }, [fadeAnim])
+
+  useEffect(() => {
+    if (phase === 'listening') {
+      const loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.1, duration: 700, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1.06, duration: 900, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
         ]),
-      ).start()
-    } else {
-      pulseAnim.setValue(1)
+      )
+      loop.start()
+      return () => loop.stop()
     }
-  }, [isListening, pulseAnim])
+    pulseAnim.setValue(1)
+    return undefined
+  }, [phase, pulseAnim])
 
-  useEffect(() => {
-    if (videoReady) {
-      Animated.timing(controlsAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start()
-    } else {
-      controlsAnim.setValue(0)
-    }
-  }, [videoReady, controlsAnim])
-
-  const requestPermission = async () => {
-    if (Platform.OS === 'ios') return true
-    const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO)
-    return granted === PermissionsAndroid.RESULTS.GRANTED
-  }
-
-  const startRecording = async () => {
-    const ok = await requestPermission()
-    if (!ok) return
-    setVideoUrl(null)
-    setVideoReady(false)
-    setVideoEnded(false)
-    setIsPaused(false)
-    setMessage('')
-    setIsListening(true)
-    await audioRecorderPlayer.startRecorder()
-  }
-
-  const stopRecordingAndSend = async () => {
-    try {
-      setIsListening(false)
-      setIsUploading(true)
-      const audioPath = await audioRecorderPlayer.stopRecorder()
-
-      const formData = new FormData()
-      formData.append('file', {
-        uri: Platform.OS === 'ios' ? audioPath : `file://${audioPath}`,
-        name: 'recording.m4a',
-        type: 'audio/m4a',
-      } as any)
-
-      const res = await fetch(`${API_BASE_URL}/transcribe`, { method: 'POST', body: formData })
-      const data = await res.json()
-
-      setSpokenText(data.text || '')
-      if (data.found && data.video) {
-        setVideoUrl(`${API_BASE_URL}${data.video}`)
-        setIsPaused(false)
-        setVideoEnded(false)
-      } else {
-        setMessage(data.message || 'Sign does not exist for this sentence')
-      }
-    } catch (e) {
-      console.log('Error:', e)
-      setMessage('Something went wrong')
-    } finally {
-      setIsUploading(false)
-    }
-  }
-
-  const toggleMic = async () => {
-    if (isListening) await stopRecordingAndSend()
-    else await startRecording()
-  }
-
-  const clearAll = () => {
+  const resetResult = () => {
     setSpokenText('')
     setVideoUrl(null)
     setVideoReady(false)
     setVideoEnded(false)
     setIsPaused(false)
-    setMessage('')
+    setErrorMessage('')
+  }
+
+  const processAudio = async (audioPath: string) => {
+    setPhase('processing')
+    try {
+      const data = await transcribeSpeechToSign(audioPath, conversionLang)
+      if (!mountedRef.current) return
+      const text = displaySpeechText(data, conversionLang)
+      setSpokenText(text)
+
+      if (data.found && data.video) {
+        const url = signVideoUrl(data.video)
+        setVideoUrl(url)
+        setIsPaused(false)
+        setVideoEnded(false)
+        setPhase('success')
+        cueSuccess()
+        await addHistoryItem({
+          type: 'speech-to-sign',
+          text: text || translate(conversionLang, 'sts.title'),
+          status: 'success',
+          videoUrl: url || undefined,
+          conversionLang,
+        })
+        return
+      }
+
+      setPhase('unsupported')
+      setErrorMessage(translate(conversionLang, 'sts.unsupportedBody'))
+      cueError()
+      await addHistoryItem({
+        type: 'speech-to-sign',
+        text: text || translate(conversionLang, 'sts.unsupported'),
+        status: 'unsupported',
+        conversionLang,
+      })
+    } catch (err) {
+      if (!mountedRef.current) return
+      const network = err instanceof SpeechApiError && err.kind === 'network'
+      setErrorMessage(translate(conversionLang, network ? 'sts.network' : 'sts.failed'))
+      setPhase('error')
+      cueError()
+    }
+  }
+
+  const startRecording = async () => {
+    const permission = await ensureMicrophonePermission()
+    if (permission !== 'granted') {
+      setPhase('denied')
+      setErrorMessage(t('sts.permission'))
+      cueError()
+      if (permission === 'blocked') {
+        Alert.alert(t('sts.permission'), '', [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('sts.openSettings'), onPress: () => void openAppSettings() },
+        ])
+      }
+      return
+    }
+
+    resetResult()
+    try {
+      const uri = await startAppRecorder()
+      setLastAudioPath(uri)
+      setPhase('listening')
+      cueListenStart()
+    } catch {
+      setPhase('error')
+      setErrorMessage(t('sts.recordFail'))
+      cueError()
+    }
+  }
+
+  const stopRecordingAndSend = async () => {
+    try {
+      const audioPath = await stopAppRecorder()
+      const path = audioPath || lastAudioPath
+      setLastAudioPath(path)
+      cueListenStop()
+      await processAudio(path)
+    } catch {
+      setPhase('error')
+      setErrorMessage(t('sts.recordFail'))
+      cueError()
+    }
+  }
+
+  const toggleMic = async () => {
+    if (phase === 'listening') await stopRecordingAndSend()
+    else if (phase !== 'processing') await startRecording()
+  }
+
+  const retry = async () => {
+    if (lastAudioPath) await processAudio(lastAudioPath)
+    else await startRecording()
   }
 
   const handleVideoEnd = () => {
@@ -369,135 +209,171 @@ const SpeechToSignScreen: React.FC<Props> = ({ navigation }) => {
     }
   }
 
-  const micDisabled = isUploading || videoReady
-  const playPauseIcon = isPaused ? '▶️' : '⏸️'
-  const playPauseBg = isPaused ? '#1e40af' : '#15803d'
-  const playPauseBorder = isPaused ? BLUE : GREEN
+  const statusLabel =
+    phase === 'listening'
+      ? t('sts.listening')
+      : phase === 'processing'
+        ? t('sts.processing')
+        : phase === 'denied'
+          ? t('sts.permission')
+          : videoReady
+            ? videoEnded
+              ? t('sts.replay')
+              : isPaused
+                ? t('sts.paused')
+                : t('sts.playing')
+            : t('sts.tapToSpeak')
 
-  const statusLabel = isListening
-    ? 'Listening… tap to stop'
-    : isUploading
-      ? 'Processing…'
-      : videoReady
-        ? videoEnded
-          ? 'Tap ▶️ to replay'
-          : isPaused
-            ? 'Paused'
-            : 'Playing'
-        : 'Tap to speak'
+  const micDisabled = phase === 'processing'
+  const showSigns = phase === 'idle' || phase === 'unsupported' || phase === 'denied' || phase === 'error'
+  const practiceSign = SUPPORTED_SIGNS.find((s) => s.id === practiceId)
+  const phraseLabel = (sign: { en: string; ur: string }) => (conversionLang === 'ur' ? sign.ur : sign.en)
 
   return (
     <Screen padded={false}>
-      {/* Guide modal */}
-      <GuideModal visible={showGuide} onClose={() => setShowGuide(false)} />
+      <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
+        <Atmosphere />
 
-      <View style={styles.ambientGlow} />
+        <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+          <YStack px='$5' pt='$3' pb='$2'>
+            <Text style={styles.screenTitle} maxFontSizeMultiplier={1.4}>
+              {t('sts.title')}
+            </Text>
+            <Text style={styles.screenSub} maxFontSizeMultiplier={1.35}>
+              {t('sts.sub')}
+            </Text>
+          </YStack>
 
-      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-        <YStack px='$5' pt='$3' pb='$2'>
-          <XStack ai='center' jc='space-between'>
-            <YStack>
-              <Text style={styles.screenTitle}>Speech to Sign</Text>
-              <Text style={styles.screenSub}>Convert speech into real sign language videos</Text>
-            </YStack>
-            {/* Help button to re-open the guide */}
-            <Pressable
-              onPress={() => setShowGuide(true)}
-              hitSlop={10}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: CARD_BG,
-                borderWidth: 1,
-                borderColor: BORDER,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <RNText style={{ color: '#94a3b8', fontSize: 15, fontWeight: '700' }}>?</RNText>
-            </Pressable>
-          </XStack>
-        </YStack>
-
-        <ScrollView contentContainerStyle={{ padding: 20 }}>
-          {videoUrl ? (
-            <View style={{ height: 250, marginBottom: 20 }}>
-              <Video
-                ref={videoRef}
-                source={{ uri: videoUrl }}
-                style={{ flex: 1, borderRadius: 12 }}
-                resizeMode='contain'
-                paused={isPaused}
-                onLoad={() => setVideoReady(true)}
-                onEnd={handleVideoEnd}
-                onError={() => {
-                  setMessage('Failed to load video')
-                  setVideoReady(false)
-                }}
-              />
-            </View>
-          ) : (
-            <View style={{ height: 250, marginBottom: 20 }}>
-              <Image source={defaultAvatar} style={{ flex: 1, borderRadius: 12, width: '100%', height: '100%' }} resizeMode='contain' />
-            </View>
-          )}
-
-          {message ? (
-            <View style={styles.spokenCard}>
-              <Text style={styles.spokenLabel}>Result</Text>
-              <RNText style={{ color: 'white', marginTop: 10 }}>{message}</RNText>
-            </View>
-          ) : null}
-
-          {spokenText ? (
-            <View style={styles.spokenCard}>
-              <XStack ai='center' jc='space-between'>
-                <Text style={styles.spokenLabel}>Spoken Text</Text>
-                <Pressable onPress={clearAll}>
-                  <Text style={styles.clearBtn}>Clear</Text>
-                </Pressable>
-              </XStack>
-              <RNText style={{ color: 'white', marginTop: 10 }}>{spokenText}</RNText>
-            </View>
-          ) : null}
-
-          {/* ── Controls row ───────────────────────────────────────────── */}
-          <View style={styles.micCard}>
-            <XStack ai='center' jc='center' gap='$4'>
-              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-                <Pressable
-                  onPress={toggleMic}
-                  disabled={micDisabled}
-                  style={[styles.micBtn, isListening && styles.micBtnActive, micDisabled && { opacity: 0.35 }]}
-                >
-                  <RNText style={{ fontSize: 28 }}>🎙️</RNText>
-                </Pressable>
-              </Animated.View>
-
+          <ScrollView contentContainerStyle={{ paddingBottom: 16 }} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
+            <View style={styles.stage}>
               {videoUrl ? (
-                <Animated.View style={{ opacity: controlsAnim, transform: [{ scale: controlsAnim }] }}>
-                  <Pressable
-                    onPress={handlePlayPause}
-                    disabled={!videoReady}
-                    style={[styles.micBtn, { backgroundColor: playPauseBg, borderColor: playPauseBorder }]}
-                  >
-                    <RNText style={{ fontSize: 28 }}>{playPauseIcon}</RNText>
-                  </Pressable>
-                </Animated.View>
+                <Video
+                  ref={videoRef}
+                  source={{ uri: videoUrl }}
+                  style={{ flex: 1 }}
+                  resizeMode='contain'
+                  paused={isPaused}
+                  onLoad={() => setVideoReady(true)}
+                  onEnd={handleVideoEnd}
+                  onError={() => {
+                    setErrorMessage(translate(conversionLang, 'sts.videoFail'))
+                    setVideoReady(false)
+                    setPhase('error')
+                  }}
+                />
+              ) : (
+                <Image source={defaultAvatar} style={{ flex: 1, width: '100%', height: '100%' }} resizeMode='contain' />
+              )}
+              {spokenText ? (
+                <View style={styles.caption}>
+                  <Text style={styles.captionKicker}>{t('sts.spoken')}</Text>
+                  <Text style={styles.captionText} numberOfLines={2} selectable>
+                    {spokenText}
+                  </Text>
+                </View>
               ) : null}
-            </XStack>
+            </View>
 
-            <Text style={[styles.micLabel, isListening && { color: GREEN }]}>{statusLabel}</Text>
+            {spokenText ? (
+              <View style={styles.spokenActions}>
+                <ResultActions text={spokenText} videoUrl={videoUrl} />
+                <Pressable onPress={resetResult} accessibilityRole='button' hitSlop={8}>
+                  <Text style={styles.clearBtn}>{t('common.clear')}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            {phase === 'unsupported' || phase === 'error' || phase === 'denied' ? (
+              <View style={styles.errorBlock}>
+                <Text style={styles.errorTitle}>
+                  {phase === 'unsupported'
+                    ? translate(conversionLang, 'sts.unsupported')
+                    : phase === 'denied'
+                      ? t('sts.permission')
+                      : t('common.retry')}
+                </Text>
+                <Text style={styles.errorBody}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
+            {showSigns ? (
+              <View style={styles.signsBlock}>
+                <Text style={styles.signsKicker}>{t('sts.supported')}</Text>
+                <Text style={styles.sectionHint}>{t('sts.supportedHint')}</Text>
+                {practiceSign ? (
+                  <View style={styles.practiceBlock}>
+                    <Text style={styles.practiceLabel}>{t('sts.practice')}</Text>
+                    <Text style={styles.practiceEn} maxFontSizeMultiplier={1.4}>
+                      {phraseLabel(practiceSign)}
+                    </Text>
+                    <Text style={styles.sectionHint}>{t('sts.practiceSay')}</Text>
+                  </View>
+                ) : null}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.signRail}>
+                  {SUPPORTED_SIGNS.map((sign) => {
+                    const selected = practiceId === sign.id
+                    const label = phraseLabel(sign)
+                    return (
+                      <Pressable
+                        key={sign.id}
+                        onPress={() => setPracticeId(selected ? null : sign.id)}
+                        style={[styles.signPill, selected && styles.signPillOn]}
+                        accessibilityRole='button'
+                        accessibilityState={{ selected }}
+                        accessibilityLabel={label}
+                      >
+                        <Text style={[styles.signPillText, selected && { color: colors.primary }]}>{label}</Text>
+                      </Pressable>
+                    )
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
+
+            <View style={styles.controls}>
+              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                <ClayControl
+                  size={84}
+                  active={phase === 'listening'}
+                  disabled={micDisabled}
+                  onPress={() => void toggleMic()}
+                  accessibilityLabel={statusLabel}
+                >
+                  {phase === 'listening' ? <CircleStop size={28} color={colors.textOnPrimary} /> : <Mic size={28} color={colors.primary} />}
+                </ClayControl>
+              </Animated.View>
+              {videoUrl ? (
+                <ClayControl size={64} onPress={handlePlayPause} disabled={!videoReady} accessibilityLabel={isPaused ? t('sts.replay') : t('sts.playing')}>
+                  {isPaused ? <Play size={24} color={colors.primary} /> : <Pause size={24} color={colors.primary} />}
+                </ClayControl>
+              ) : null}
+            </View>
+            <Text style={[styles.micLabel, (phase === 'listening' || phase === 'processing') && { color: colors.primary }]}>{statusLabel}</Text>
+
+            {phase === 'error' || phase === 'unsupported' ? (
+              <Pressable onPress={() => void retry()} style={styles.textAction}>
+                <Text style={styles.textActionLabel}>{t('common.retry')}</Text>
+              </Pressable>
+            ) : null}
+
+            {phase === 'success' ? (
+              <Pressable
+                onPress={() => {
+                  resetResult()
+                  setPhase('idle')
+                }}
+                style={styles.textAction}
+              >
+                <Text style={styles.textActionLabel}>{t('sts.newConversion')}</Text>
+              </Pressable>
+            ) : null}
+          </ScrollView>
+
+          <View style={{ paddingBottom: 20, paddingTop: 4 }}>
+            <GlassButton label={t('sts.returnHome')} onPress={() => navigation.goBack()} />
           </View>
-        </ScrollView>
-
-        <View style={{ padding: 20 }}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnText}>Return Home</Text>
-          </Pressable>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </View>
     </Screen>
   )
 }

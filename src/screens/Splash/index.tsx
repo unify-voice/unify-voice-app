@@ -2,13 +2,17 @@ import auth from '@react-native-firebase/auth'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useRef } from 'react'
 import { Animated, Dimensions, Image, View } from 'react-native'
-import { Text, YStack, XStack } from 'tamagui'
+import { Text, XStack, YStack } from 'tamagui'
 
 import uvLogo from '../../assets/logo.png'
-import { colors } from '../../theme'
+import { useLanguage } from '../../context/Language'
+import { useAppTheme } from '../../context/Theme'
+import { enterAppAfterAuth } from '../../navigation/enterApp'
+import { useThemedStyles } from '../../theme'
+import { directionStyle } from '../../utils/rtl'
 import { RootStackParamList } from '../../types/navigation'
 
-import { styles } from './styles.module'
+import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>
 
@@ -16,6 +20,9 @@ const { width } = Dimensions.get('window')
 const logoSize = Math.min(88, width * 0.2)
 
 const SplashScreen = ({ navigation }: Props) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
+  const { t, isRTL } = useLanguage()
   const fade = useRef(new Animated.Value(0)).current
   const translateY = useRef(new Animated.Value(16)).current
   const ringScale1 = useRef(new Animated.Value(0.94)).current
@@ -24,16 +31,8 @@ const SplashScreen = ({ navigation }: Props) => {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fade, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 800,
-        useNativeDriver: true,
-      }),
+      Animated.timing(fade, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.timing(translateY, { toValue: 0, duration: 800, useNativeDriver: true }),
     ]).start()
 
     const ringLoop = Animated.loop(
@@ -57,25 +56,32 @@ const SplashScreen = ({ navigation }: Props) => {
     ringLoop.start()
     ringLoop2.start()
 
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    let navigated = false
+
     const unsubscribe = auth().onAuthStateChanged((user) => {
-      setTimeout(() => {
+      if (timeoutId) clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        if (navigated) return
+        navigated = true
         if (user) {
-          navigation.replace('MainTabs', { screen: 'HomeScreen' })
+          void enterAppAfterAuth(navigation, user.uid)
         } else {
           navigation.replace('Onboarding')
         }
-      }, 2000)
+      }, 1800)
     })
 
     return () => {
       unsubscribe()
+      if (timeoutId) clearTimeout(timeoutId)
       ringLoop.stop()
       ringLoop2.stop()
     }
   }, [glowOpacity, fade, ringScale1, ringScale2, translateY, navigation])
 
   return (
-    <YStack flex={1} bg={colors.background} jc='center' ai='center'>
+    <YStack flex={1} bg={colors.background} jc='center' ai='center' style={directionStyle(isRTL)}>
       <Animated.View style={[styles.glowCore, { opacity: glowOpacity }]} />
 
       <Animated.View style={[styles.ring, styles.ring1, { transform: [{ scale: ringScale1 }] }]} />
@@ -88,7 +94,7 @@ const SplashScreen = ({ navigation }: Props) => {
 
           <YStack ai='center' gap='$1'>
             <XStack ai='center'>
-              <Text fontSize={34} fontWeight='900' letterSpacing={1.5} color='#f0f0f0'>
+              <Text fontSize={34} fontWeight='900' letterSpacing={1.5} color={colors.textPrimary}>
                 Unify
               </Text>
               <Text
@@ -96,20 +102,20 @@ const SplashScreen = ({ navigation }: Props) => {
                 fontWeight='900'
                 letterSpacing={1.5}
                 color={colors.primary}
-                style={{ textShadowColor: 'rgba(34,197,94,0.5)', textShadowRadius: 12, textShadowOffset: { width: 0, height: 0 } }}
+                style={{ textShadowColor: colors.primaryGlow, textShadowRadius: 12, textShadowOffset: { width: 0, height: 0 } }}
               >
                 Voice
               </Text>
             </XStack>
-            <Text fontSize={10} letterSpacing={3.5} color='rgba(255,255,255,0.35)' style={{ textTransform: 'uppercase', fontWeight: '300' }}>
-              Intelligent Communication
+            <Text fontSize={10} letterSpacing={3.5} color={colors.textMuted} style={{ textTransform: 'uppercase', fontWeight: '300' }}>
+              {t('app.tagline')}
             </Text>
           </YStack>
 
           <View style={styles.divider} />
 
-          <Text fontSize={13} color='rgba(255,255,255,0.4)' textAlign='center' maxWidth={230} lineHeight={22} fontWeight='300'>
-            Bridging silence with intelligent communication
+          <Text fontSize={13} color={colors.textFaint} textAlign='center' maxWidth={230} lineHeight={22} fontWeight='300'>
+            {t('app.subtitle')}
           </Text>
         </YStack>
       </Animated.View>

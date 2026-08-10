@@ -1,21 +1,22 @@
 import { StyleSheet } from 'react-native'
 
-import { spacing } from '../../../theme'
+import { spacing, type ThemeColors } from '../../../theme'
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0d0d0d',
-  },
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
 
-  container: {
-    flex: 1,
-    position: 'relative',
-  },
+    container: {
+      flex: 1,
+      position: 'relative',
+    },
 
-  padding: {
-    paddingHorizontal: spacing.lg,
-  },
-})
+    padding: {
+      paddingHorizontal: spacing.lg,
+    },
+  })
 
-export { styles }
+export { createStyles }

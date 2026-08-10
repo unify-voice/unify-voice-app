@@ -1,198 +1,118 @@
 import { StyleSheet } from 'react-native'
 
-import { colors } from '../../theme'
+import type { ThemeColors } from '../../theme'
 
-const styles = StyleSheet.create({
-  ambientGlow: {
-    position: 'absolute',
-    width: 380,
-    height: 280,
-    borderRadius: 190,
-    top: -60,
-    alignSelf: 'center',
-    backgroundColor: 'transparent',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 80,
-  },
-  brandUnify: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#f0f0f0',
-    letterSpacing: 1,
-  },
-  brandVoice: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: colors.primary,
-    letterSpacing: 1,
-    textShadowColor: 'rgba(34,197,94,0.45)',
-    textShadowRadius: 12,
-    textShadowOffset: { width: 0, height: 0 },
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  screenTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#f0f0f0',
-  },
-  screenSub: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.35)',
-    fontWeight: '300',
-    marginTop: 2,
-  },
+const createStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    screenTitle: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: c.textPrimary,
+      letterSpacing: -0.6,
+    },
+    screenSub: {
+      fontSize: 14,
+      color: c.textSecondary,
+      fontWeight: '400',
+      marginTop: 6,
+      lineHeight: 20,
+    },
+    stage: {
+      alignItems: 'center',
+      paddingTop: 20,
+      paddingBottom: 8,
+    },
+    waveRow: {
+      height: 36,
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      gap: 5,
+      marginBottom: 18,
+    },
+    waveBar: {
+      width: 3.5,
+      height: 32,
+      borderRadius: 3,
+    },
+    micLabel: {
+      fontSize: 14,
+      color: c.textSecondary,
+      fontWeight: '600',
+      marginTop: 14,
+      textAlign: 'center',
+      paddingHorizontal: 32,
+    },
+    footer: {
+      paddingHorizontal: 24,
+      paddingBottom: 28,
+      paddingTop: 10,
+      alignItems: 'center',
+      gap: 8,
+    },
+    transcriptSection: {
+      flex: 1,
+      marginHorizontal: 24,
+      marginTop: 20,
+    },
+    transcriptLabel: {
+      fontSize: 12,
+      color: c.textSecondary,
+      fontWeight: '700',
+    },
+    clearBtn: {
+      fontSize: 13,
+      color: c.errorText,
+      fontWeight: '700',
+    },
+    transcriptScroll: {
+      flex: 1,
+    },
+    transcriptEmpty: {
+      fontSize: 15,
+      color: c.textMuted,
+      fontWeight: '400',
+      lineHeight: 22,
+    },
+    transcriptText: {
+      fontSize: 22,
+      fontWeight: '600',
+      color: c.textPrimary,
+      lineHeight: 32,
+      letterSpacing: -0.3,
+      marginBottom: 16,
+    },
+    errorBlock: {
+      marginHorizontal: 24,
+      marginTop: 12,
+    },
+    errorTitle: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: c.errorText,
+      marginBottom: 4,
+    },
+    errorBody: {
+      fontSize: 13,
+      color: c.textSecondary,
+      lineHeight: 19,
+    },
+    textAction: {
+      minHeight: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    textActionLabel: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: c.primary,
+    },
+    textActionMuted: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: c.textSecondary,
+    },
+  })
 
-  // Mic card
-  micCard: {
-    marginHorizontal: 20,
-    marginTop: 16,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 20,
-    padding: 22,
-    alignItems: 'center',
-  },
-  waveBar: {
-    width: 4,
-    height: 40,
-    borderRadius: 2,
-  },
-  micBtn: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  micBtnActive: {
-    borderColor: colors.primary,
-    backgroundColor: 'rgba(34,197,94,0.1)',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-  },
-  micBtnRing: {
-    position: 'absolute',
-    width: 92,
-    height: 92,
-    borderRadius: 46,
-    borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.25)',
-  },
-  micLabel: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.3)',
-    fontWeight: '400',
-    marginTop: 12,
-    letterSpacing: 0.3,
-  },
-  langBadge: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  langBadgeText: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.4)',
-    fontWeight: '400',
-  },
-
-  // Transcript
-  transcriptSection: {
-    flex: 1,
-    marginHorizontal: 20,
-    marginTop: 14,
-  },
-  transcriptLabel: {
-    fontSize: 9,
-    letterSpacing: 2.5,
-    textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.3)',
-    fontWeight: '400',
-  },
-  clearBtn: {
-    fontSize: 11,
-    color: 'rgba(220,38,38,0.6)',
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  transcriptScroll: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.07)',
-    borderRadius: 14,
-  },
-  transcriptEmpty: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.2)',
-    fontWeight: '300',
-    textAlign: 'center',
-    marginTop: 24,
-    lineHeight: 20,
-  },
-  transcriptLine: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    marginBottom: 12,
-  },
-  transcriptDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    marginTop: 7,
-    flexShrink: 0,
-  },
-  transcriptText: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#f0f0f0',
-    lineHeight: 21,
-    flex: 1,
-  },
-
-  // Button
-  primaryBtn: {
-    backgroundColor: 'rgba(34,197,94,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.4)',
-    borderRadius: 999,
-    paddingVertical: 13,
-    alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-  },
-  primaryBtnText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    color: colors.primary,
-  },
-})
-
-export { styles }
+export { createStyles }

@@ -1,8 +1,10 @@
 {
   "buildFiles": [
+    "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/@react-native-google-signin/google-signin/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+    "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-keychain/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
@@ -50,10 +52,20 @@
       "abi": "x86_64",
       "artifactName": "react_codegen_RNImagePickerSpec"
     },
+    "react_codegen_RNKeychainSpec::@f9a2cb36ebca2de4baf9": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "react_codegen_RNKeychainSpec"
+    },
     "react_codegen_RNPermissionsSpec::@7ad697819b753921c957": {
       "toolchain": "toolchain",
       "abi": "x86_64",
       "artifactName": "react_codegen_RNPermissionsSpec"
+    },
+    "react_codegen_rnasyncstorage::@1596841e19ec5b9eeffe": {
+      "toolchain": "toolchain",
+      "abi": "x86_64",
+      "artifactName": "react_codegen_rnasyncstorage"
     },
     "react_codegen_rngesturehandler_codegen::@39f233abcd2c728bc6ec": {
       "toolchain": "toolchain",

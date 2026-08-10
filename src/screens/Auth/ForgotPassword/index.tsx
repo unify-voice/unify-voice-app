@@ -3,21 +3,29 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack'
 import React, { useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native'
 import { TextInput } from 'react-native-paper'
-import { Text, View, XStack, YStack } from 'tamagui'
+import { Text, View, XStack } from 'tamagui'
 
+import Atmosphere from '../../../components/Atmosphere'
 import Screen from '../../../components/layouts/Screen'
-import { colors, INPUT_THEME } from '../../../theme'
+import { useLanguage } from '../../../context/Language'
+import { useAppTheme } from '../../../context/Theme'
+import { useThemedStyles } from '../../../theme'
 import { RootStackParamList } from '../../../types/navigation'
+import { mapAuthError } from '../../../utils/authErrors'
 
-import { styles } from './styles.module'
+import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPasswordScreen'>
 
 const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors, inputTheme } = useAppTheme()
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | undefined>()
   const [successMsg, setSuccessMsg] = useState<string | undefined>()
+  const [sent, setSent] = useState(false)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.98)).current
@@ -48,14 +56,16 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
     setIsLoading(true)
     try {
       await auth().sendPasswordResetEmail(email.trim())
-      setSuccessMsg('A reset link has been sent to your email address.')
+      // Neutral copy: email enumeration protection may hide user-not-found
+      setSuccessMsg(t('auth.resetSent'))
+      setSent(true)
     } catch (err: any) {
-      const msg: Record<string, string> = {
-        'auth/user-not-found': 'No account found with this email.',
-        'auth/network-request-failed': 'Network error, please try again.',
-        'auth/invalid-email': 'Enter a valid email address.',
+      if (err?.code === 'auth/user-not-found') {
+        setSuccessMsg(t('auth.resetSent'))
+        setSent(true)
+      } else {
+        setError(mapAuthError(err?.code))
       }
-      setError(msg[err.code] ?? 'Something went wrong. Try again.')
     } finally {
       setIsLoading(false)
     }
@@ -63,77 +73,71 @@ const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <Screen padded={false}>
-      <View style={styles.ambientGlow} />
+      <View style={styles.root}>
+      <Atmosphere />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
           <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-            <YStack mb='$5'>
-              <XStack ai='center'>
-                <Text style={styles.brandUnify}>Unify</Text>
-                <Text style={styles.brandVoice}>Voice</Text>
-              </XStack>
-              <Text style={styles.brandSub}>Enter your email to reset your password securely.</Text>
-            </YStack>
+            <XStack ai='center'>
+              <Text style={styles.brandUnify}>Unify</Text>
+              <Text style={styles.brandVoice}>Voice</Text>
+            </XStack>
+            <Text style={styles.brandSub}>{t('auth.brandForgotSub')}</Text>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Forgot Password</Text>
-              <Text style={styles.cardSub}>We'll send a secure reset link to your email address.</Text>
+            <Text style={styles.screenTitle}>{t('auth.forgotTitle')}</Text>
+            <Text style={styles.screenSub}>{t('auth.forgotSub')}</Text>
 
-              {error ? (
-                <View style={styles.errorBanner}>
-                  <Text style={styles.errorText}>{error}</Text>
-                </View>
-              ) : null}
+              {error ? <Text style={styles.errText}>{error}</Text> : null}
+              {successMsg ? <Text style={styles.successText}>{successMsg}</Text> : null}
 
-              {successMsg ? (
-                <View style={styles.successBanner}>
-                  <Text style={styles.successText}>{successMsg}</Text>
-                </View>
-              ) : null}
-
-              <Text style={styles.fieldLabel}>Email</Text>
+              <Text style={styles.fieldLabel}>{t('auth.email')}</Text>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='your@email.com'
                 value={email}
-                onChangeText={(t) => {
-                  setEmail(t)
+                onChangeText={(txt) => {
+                  setEmail(txt)
                   setError(undefined)
                 }}
                 keyboardType='email-address'
                 autoCapitalize='none'
-                outlineColor={error ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.1)'}
-                activeOutlineColor={error ? '#f87171' : colors.primary}
+                autoCorrect={false}
+                editable={!sent}
+                outlineColor={error ? colors.errorBorder : colors.inputOutline}
+                activeOutlineColor={error ? colors.errorText : colors.primary}
                 style={styles.input}
-                placeholderTextColor='rgba(255,255,255,0.2)'
-                theme={INPUT_THEME}
+                placeholderTextColor={colors.textFaint}
+                theme={inputTheme}
               />
 
-              <Pressable
-                onPress={handleSendResetLink}
-                disabled={isLoading}
-                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: 'rgba(34,197,94,0.2)' }, isLoading && { opacity: 0.5 }]}
-              >
-                {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.primaryBtnText}>Send Reset Link</Text>}
-              </Pressable>
+              {!sent ? (
+                <Pressable
+                  onPress={handleSendResetLink}
+                  disabled={isLoading}
+                  style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.88 }, isLoading && { opacity: 0.5 }]}
+                >
+                  {isLoading ? <ActivityIndicator size='small' color={colors.textOnPrimary} /> : <Text style={styles.primaryBtnText}>{t('auth.sendReset')}</Text>}
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={() => navigation.replace('Login')}
+                  style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.88 }]}
+                >
+                  <Text style={styles.primaryBtnText}>{t('auth.backToLogin')}</Text>
+                </Pressable>
+              )}
 
-              <XStack ai='center' gap='$3' my='$4'>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
-                <View style={styles.dividerLine} />
-              </XStack>
-
-              <Pressable
-                onPress={() => navigation.navigate('Login')}
-                style={({ pressed }) => [styles.secondaryBtn, pressed && { borderColor: 'rgba(255,255,255,0.2)', backgroundColor: 'rgba(255,255,255,0.05)' }]}
-              >
-                <Text style={styles.secondaryBtnText}>Back to Login</Text>
-              </Pressable>
-            </View>
+              {!sent ? (
+                <Pressable onPress={() => navigation.navigate('Login')} style={{ alignSelf: 'center', marginTop: 22, minHeight: 44, justifyContent: 'center' }}>
+                  <Text style={styles.footerLink}>{t('auth.backToLogin')}</Text>
+                </Pressable>
+              ) : null}
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+      </View>
     </Screen>
   )
 }

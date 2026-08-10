@@ -20,3 +20,29 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// RN 0.81+ removed the Kotlin synthetic `currentActivity` property.
+// react-native-audio-recorder-player 3.6.10 still references it.
+subprojects { subproject ->
+    if (subproject.name != "react-native-audio-recorder-player") {
+        return
+    }
+
+    subproject.afterEvaluate {
+        def moduleFile = subproject.file("src/main/java/com/dooboolab.audiorecorderplayer/RNAudioRecorderPlayerModule.kt")
+        subproject.tasks.named("preBuild").configure {
+            doFirst {
+                if (!moduleFile.exists()) {
+                    return
+                }
+                def text = moduleFile.getText("UTF-8")
+                def patched = text
+                        .replace("(currentActivity)!!", "getCurrentActivity()!!")
+                        .replace("currentActivity!!.applicationContext", "reactApplicationContext")
+                if (patched != text) {
+                    moduleFile.write(patched, "UTF-8")
+                }
+            }
+        }
+    }
+}

@@ -1,5 +1,9 @@
 ENV['RCT_NEW_ARCH_ENABLED'] = '1'
 ENV['VISION_CAMERA_ENABLE_NITRO'] = 'false'
+# RN 0.84+ defaults to prebuilt RNCore; that breaks RCT_EXPORT_* macros
+# in react-native-firebase when using use_frameworks! :linkage => :static.
+ENV['RCT_USE_PREBUILT_RNCORE'] = '0'
+ENV['RCT_USE_RN_DEP'] = '0'
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
     "react-native/scripts/react_native_pods.rb",

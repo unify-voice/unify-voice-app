@@ -1,117 +1,130 @@
-import { getAuth } from '@react-native-firebase/auth'
+import auth from '@react-native-firebase/auth'
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs'
-import { CompositeScreenProps } from '@react-navigation/native'
+import { CompositeScreenProps, useFocusEffect } from '@react-navigation/native'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import React, { useEffect, useRef } from 'react'
-import { Animated, Pressable, ScrollView } from 'react-native'
-import { Text, View, XStack, YStack } from 'tamagui'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Animated, Pressable, ScrollView, View } from 'react-native'
+import { Text, YStack } from 'tamagui'
 
-import { colors } from '../../theme'
+import Atmosphere from '../../components/Atmosphere'
+import { useAuthUser } from '../../context/AuthUser'
+import { useLanguage } from '../../context/Language'
+import { useAppTheme } from '../../context/Theme'
+import { TourTarget, useTour } from '../../context/Tour'
+import { countHistoryThisWeek, loadHistory, weekDayStats, type WeekDayStat } from '../../services/history'
+import { hasCompletedTutorial } from '../../services/tutorial'
+import { useThemedStyles } from '../../theme'
 import { RootStackParamList } from '../../types/navigation'
 import { TabParamList } from '../../types/tabs'
+import { directionStyle } from '../../utils/rtl'
 
-import { FEATURES, WEEKLY_DATA } from './const'
-import { styles } from './styles.module'
+import WeekChart from './components/WeekChart'
+import { FEATURES } from './const'
+import { createStyles } from './styles.module'
 
 type Props = CompositeScreenProps<BottomTabScreenProps<TabParamList, 'HomeScreen'>, NativeStackScreenProps<RootStackParamList>>
 
 const HomeScreen = ({ navigation }: Props) => {
-  const authInstance = getAuth()
-  const user = authInstance.currentUser
-  const displayName = user?.displayName || 'User'
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
+  const { t, isRTL } = useLanguage()
+  const { displayName, refreshUser, user } = useAuthUser()
+  const { startTour, active, stepId } = useTour()
+  const [weekCount, setWeekCount] = useState(0)
+  const [weekDays, setWeekDays] = useState<WeekDayStat[]>(() => weekDayStats([]))
 
   const fadeAnim = useRef(new Animated.Value(0)).current
-  const slideAnim = useRef(new Animated.Value(12)).current
+  const scrollRef = useRef<ScrollView>(null)
+  const tourAskedRef = useRef(false)
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshUser()
+      void loadHistory().then((items) => {
+        setWeekCount(countHistoryThisWeek(items))
+        setWeekDays(weekDayStats(items))
+      })
+      const uid = auth().currentUser?.uid
+      if (!uid || tourAskedRef.current) return
+      void hasCompletedTutorial(uid).then((done) => {
+        if (done || tourAskedRef.current) return
+        tourAskedRef.current = true
+        setTimeout(() => startTour(), 500)
+      })
+    }, [refreshUser, startTour, user?.uid]),
+  )
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
-    ]).start()
-  }, [fadeAnim, slideAnim])
+    if (!active) return
+    if (stepId === 'welcome') scrollRef.current?.scrollTo({ y: 0, animated: true })
+    if (stepId === 'modules') scrollRef.current?.scrollToEnd({ animated: true })
+  }, [active, stepId])
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start()
+  }, [fadeAnim])
 
   const getGreeting = () => {
     const h = new Date().getHours()
-    if (h < 12) return 'Good morning'
-    if (h < 18) return 'Good afternoon'
-    return 'Good evening'
+    if (h < 12) return t('home.greeting.morning')
+    if (h < 18) return t('home.greeting.afternoon')
+    return t('home.greeting.evening')
   }
 
   return (
-    <>
-      <View style={styles.ambientGlow} />
-
-      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-        <YStack px='$5' mt='$3'>
-          <Text style={styles.greetingLabel}>{getGreeting()}</Text>
-          <Text style={styles.welcomeName}>{displayName}</Text>
-          <Text style={styles.welcomeSub}>Bridging communication gaps with modern AI.</Text>
-        </YStack>
-
-        <XStack px='$5' mt='$4' gap='$2'>
-          {[
-            { label: 'Sessions', value: '124', unit: 'total', trend: '↑ 12 this week', trendColor: colors.primary },
-            { label: 'Words', value: '3.2k', unit: 'conv.', trend: '↑ 8% vs last', trendColor: colors.primary },
-            { label: 'Accuracy', value: '97', unit: '%', trend: 'Stable', trendColor: 'rgba(255,255,255,0.3)' },
-          ].map((s) => (
-            <View key={s.label} style={styles.statCard}>
-              <Text style={styles.statLabel}>{s.label}</Text>
-              <XStack ai='baseline' gap='$1'>
-                <Text style={styles.statValue}>{s.value}</Text>
-                <Text style={styles.statUnit}>{s.unit}</Text>
-              </XStack>
-              <Text style={[styles.statTrend, { color: s.trendColor }]}>{s.trend}</Text>
+    <View style={styles.root}>
+      <Atmosphere />
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <View style={[{ flex: 1 }, directionStyle(isRTL)]}>
+          <TourTarget id='welcome'>
+            <View style={styles.hero}>
+              <Text style={styles.greetingLabel} maxFontSizeMultiplier={1.3}>
+                {getGreeting()}
+              </Text>
+              <Text style={styles.welcomeName} maxFontSizeMultiplier={1.35}>
+                {displayName}
+              </Text>
+              <Text style={styles.welcomeSub} maxFontSizeMultiplier={1.35}>
+                {t('home.welcomeSub')}
+              </Text>
             </View>
-          ))}
-        </XStack>
+          </TourTarget>
 
-        <YStack px='$5' mt='$4'>
-          <XStack jc='space-between' ai='center' mb='$2'>
-            <Text style={styles.usageLabel}>Daily usage limit</Text>
-            <Text style={styles.usagePct}>68%</Text>
-          </XStack>
-          <View style={styles.barBg}>
-            <View style={[styles.barFill, { width: '68%' }]} />
-          </View>
-        </YStack>
+          <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <WeekChart days={weekDays} total={weekCount} onPress={() => navigation.navigate('ActivityScreen')} />
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.sectionCard}>
-            <XStack jc='space-between' ai='center' mb='$3'>
-              <Text style={styles.sectionCardTitle}>Weekly activity</Text>
-              <Text style={styles.sectionCardPeriod}>This week</Text>
-            </XStack>
-            <XStack ai='flex-end' gap='$2' style={{ height: 68 }}>
-              {WEEKLY_DATA.map((bar) => (
-                <YStack key={bar.day} flex={1} ai='center' gap='$1' jc='flex-end'>
-                  <View style={[styles.barCol, { height: bar.height }, bar.active && styles.barColActive]} />
-                  <Text style={styles.barDayLabel}>{bar.day}</Text>
-                </YStack>
-              ))}
-            </XStack>
-          </View>
+            <Text style={styles.hintLine}>{t('home.signsHint')}</Text>
 
-          <Text style={styles.sectionLabel}>Communication modes</Text>
+            <TourTarget id='modules'>
+              <Text style={styles.sectionLabel}>{t('home.features')}</Text>
 
-          {FEATURES.map((f) => (
-            <Pressable
-              key={f.key}
-              onPress={() => navigation.navigate(f.route as any)}
-              style={({ pressed }) => [styles.featureCard, pressed && styles.featureCardPressed]}
-            >
-              <View style={styles.featureIcon}>
-                <Text style={{ fontSize: 20 }}>{f.icon}</Text>
-              </View>
-              <YStack flex={1}>
-                <Text style={styles.featureTitle}>{f.title}</Text>
-                <Text style={styles.featureSub}>{f.subtitle}</Text>
-              </YStack>
-              <Text style={styles.featureArrow}>›</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+              {FEATURES.map((f, index) => {
+                const Icon = f.Icon
+                return (
+                  <View key={f.key}>
+                    <Pressable
+                      onPress={() => navigation.navigate(f.route)}
+                      style={({ pressed }) => [styles.featureRow, pressed && { opacity: 0.7 }]}
+                      accessibilityRole='button'
+                      accessibilityLabel={t(f.titleKey)}
+                    >
+                      <View style={styles.featureOrb}>
+                        <Icon size={26} color={colors.primary} />
+                      </View>
+                      <YStack flex={1}>
+                        <Text style={styles.featureTitle}>{t(f.titleKey)}</Text>
+                        <Text style={styles.featureSub}>{t(f.subtitleKey)}</Text>
+                      </YStack>
+                    </Pressable>
+                    {index < FEATURES.length - 1 ? <View style={styles.featureRule} /> : null}
+                  </View>
+                )
+              })}
+            </TourTarget>
+          </ScrollView>
+        </View>
       </Animated.View>
-    </>
+    </View>
   )
 }
 

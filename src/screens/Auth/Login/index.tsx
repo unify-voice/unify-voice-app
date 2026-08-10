@@ -1,28 +1,40 @@
 import auth from '@react-native-firebase/auth'
 import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Eye, EyeOff } from '@tamagui/lucide-icons-2'
-import React, { useEffect, useRef, useState } from 'react'
-import { ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native'
+import { Eye, EyeOff, Fingerprint, Globe, ScanFace } from '@tamagui/lucide-icons-2'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView } from 'react-native'
 import { TextInput } from 'react-native-paper'
-import { Text, View, YStack, XStack } from 'tamagui'
+import { Text, View, XStack } from 'tamagui'
 
+import Atmosphere from '../../../components/Atmosphere'
 import Screen from '../../../components/layouts/Screen'
 import { signInWithGoogle } from '../../../config/googleAuth'
+import { useLanguage } from '../../../context/Language'
 import { useLoader } from '../../../context/Loader'
-import { colors, INPUT_THEME } from '../../../theme'
+import { useAppTheme } from '../../../context/Theme'
+import { getBiometryKind, getBiometryLabel, hasBiometricCredentials, loadBiometricCredentials, saveBiometricCredentials } from '../../../services/biometrics'
+import { enterAppAfterAuth } from '../../../navigation/enterApp'
+import { useThemedStyles } from '../../../theme'
 import { RootStackParamList } from '../../../types/navigation'
+import { mapAuthError } from '../../../utils/authErrors'
 
-import { styles } from './styles.module'
+import { createStyles } from './styles.module'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors, inputTheme } = useAppTheme()
+  const { t } = useLanguage()
   const { show, hide } = useLoader()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({})
+  const [biometryLabel, setBiometryLabel] = useState('Biometrics')
+  const [biometryKind, setBiometryKind] = useState<'face' | 'fingerprint' | 'iris' | 'none'>('none')
+  const [canUseBiometrics, setCanUseBiometrics] = useState(false)
 
   const fadeAnim = useRef(new Animated.Value(0)).current
   const scaleAnim = useRef(new Animated.Value(0.98)).current
@@ -34,22 +46,50 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     ]).start()
   }, [fadeAnim, scaleAnim])
 
+  useEffect(() => {
+    ;(async () => {
+      const [label, kind, hasCreds] = await Promise.all([getBiometryLabel(), getBiometryKind(), hasBiometricCredentials()])
+      setBiometryLabel(label)
+      setBiometryKind(kind)
+      setCanUseBiometrics(kind !== 'none' && hasCreds)
+    })()
+  }, [])
+
   const validate = () => {
     const e: typeof errors = {}
     if (!email.trim()) e.email = 'Email is required'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email = 'Enter a valid email address'
     if (!password) e.password = 'Password is required'
+    else if (password.length < 6) e.password = 'Password must be at least 6 characters'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
-  const mapError = (code: string) =>
-    ({
-      'auth/user-not-found': 'This email is not registered',
-      'auth/wrong-password': 'Incorrect password',
-      'auth/invalid-credential': 'Incorrect email or password',
-      'auth/network-request-failed': 'Network error, please try again',
-    })[code] ?? 'Something went wrong. Try again'
+  const offerBiometrics = useCallback(
+    async (userEmail: string, userPassword: string) => {
+      if (biometryKind === 'none') return
+      const already = await hasBiometricCredentials()
+      if (already) {
+        await saveBiometricCredentials(userEmail, userPassword)
+        return
+      }
+      Alert.alert(`Enable ${biometryLabel}?`, `Use ${biometryLabel} for faster sign-in next time.`, [
+        { text: 'Not now', style: 'cancel' },
+        {
+          text: 'Enable',
+          onPress: async () => {
+            try {
+              await saveBiometricCredentials(userEmail, userPassword)
+              setCanUseBiometrics(true)
+            } catch {
+              Alert.alert('Could not enable biometrics', 'You can enable this later from Profile.')
+            }
+          },
+        },
+      ])
+    },
+    [biometryKind, biometryLabel],
+  )
 
   const handleLogin = async () => {
     setErrors((e) => ({ ...e, general: undefined }))
@@ -57,11 +97,29 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     setIsLoading(true)
     try {
       await auth().signInWithEmailAndPassword(email.trim(), password)
-      navigation.replace('MainTabs', {
-        screen: 'HomeScreen',
-      })
+      await offerBiometrics(email.trim(), password)
+      await enterAppAfterAuth(navigation, auth().currentUser?.uid)
     } catch (err: any) {
-      setErrors((e) => ({ ...e, general: mapError(err.code) }))
+      setErrors((e) => ({ ...e, general: mapAuthError(err?.code) }))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleBiometricLogin = async () => {
+    setErrors((e) => ({ ...e, general: undefined }))
+    setIsLoading(true)
+    try {
+      const creds = await loadBiometricCredentials()
+      if (!creds) {
+        setErrors((e) => ({ ...e, general: 'No biometric credentials found. Sign in with email first.' }))
+        return
+      }
+      await auth().signInWithEmailAndPassword(creds.email, creds.password)
+      await enterAppAfterAuth(navigation, auth().currentUser?.uid)
+    } catch (err: any) {
+      if (err?.message?.includes('cancel') || err?.code === 'USER_CANCELED') return
+      setErrors((e) => ({ ...e, general: mapAuthError(err?.code, 'Biometric sign-in failed. Try email instead.') }))
     } finally {
       setIsLoading(false)
     }
@@ -71,125 +129,131 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     show()
     try {
       await signInWithGoogle()
-      navigation.replace('MainTabs', {
-        screen: 'HomeScreen',
-      })
-    } catch {
-      setErrors((e) => ({ ...e, general: 'Google sign-in failed. Try again.' }))
+      await enterAppAfterAuth(navigation, auth().currentUser?.uid)
+    } catch (err: any) {
+      if (err?.code === 'SIGN_IN_CANCELLED' || err?.message?.includes('cancel')) return
+      setErrors((e) => ({ ...e, general: err?.message || 'Google sign-in failed. Try again.' }))
     } finally {
       hide()
     }
   }
 
+  const BiometricIcon = biometryKind === 'face' ? ScanFace : Fingerprint
+
   return (
     <Screen padded={false}>
-      <View style={styles.ambientGlow} />
+      <View style={styles.root}>
+      <Atmosphere />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps='handled' showsVerticalScrollIndicator={false}>
           <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-            <YStack mb='$5'>
-              <XStack ai='center'>
-                <Text style={styles.brandUnify}>Unify</Text>
-                <Text style={styles.brandVoice}>Voice</Text>
-              </XStack>
-              <Text style={styles.brandSub}>Welcome back to your AI communication hub.</Text>
-            </YStack>
+            <XStack ai='center'>
+              <Text style={styles.brandUnify}>Unify</Text>
+              <Text style={styles.brandVoice}>Voice</Text>
+            </XStack>
+            <Text style={styles.brandSub}>{t('auth.welcomeBack')}</Text>
 
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Sign in to continue</Text>
-              <Text style={styles.cardSub}>Use your email and password to unlock the full experience.</Text>
+            <Text style={styles.screenTitle}>{t('auth.signInTitle')}</Text>
+            <Text style={styles.screenSub}>{t('auth.signInSub')}</Text>
 
-              {errors.general ? (
-                <View style={styles.generalErr}>
-                  <Text style={styles.errText}>{errors.general}</Text>
-                </View>
-              ) : null}
+              {errors.general ? <Text style={styles.errText}>{errors.general}</Text> : null}
 
-              <Text style={styles.fieldLabel}>Email</Text>
+              <Text style={styles.fieldLabel}>{t('auth.email')}</Text>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='your@email.com'
                 value={email}
-                onChangeText={(t) => {
-                  setEmail(t)
+                onChangeText={(txt) => {
+                  setEmail(txt)
                   setErrors((e) => ({ ...e, email: undefined }))
                 }}
                 keyboardType='email-address'
                 autoCapitalize='none'
-                outlineColor={errors.email ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.1)'}
-                activeOutlineColor={errors.email ? '#f87171' : colors.primary}
+                autoCorrect={false}
+                outlineColor={errors.email ? colors.errorBorder : colors.inputOutline}
+                activeOutlineColor={errors.email ? colors.errorText : colors.primary}
                 style={styles.input}
-                placeholderTextColor='rgba(255,255,255,0.2)'
-                theme={INPUT_THEME}
+                placeholderTextColor={colors.textFaint}
+                theme={inputTheme}
               />
               {errors.email ? <Text style={styles.fieldErr}>{errors.email}</Text> : null}
 
-              <Text style={[styles.fieldLabel, { marginTop: 14 }]}>Password</Text>
+              <Text style={[styles.fieldLabel, { marginTop: 14 }]}>{t('auth.password')}</Text>
               <TextInput
                 mode='flat'
+                underlineColor='transparent'
                 placeholder='Enter your password'
                 value={password}
-                onChangeText={(t) => {
-                  setPassword(t)
+                onChangeText={(txt) => {
+                  setPassword(txt)
                   setErrors((e) => ({ ...e, password: undefined }))
                 }}
                 secureTextEntry={!showPassword}
                 right={
                   <TextInput.Icon
-                    icon={() => (showPassword ? <EyeOff size={18} /> : <Eye size={18} />)}
-                    color='rgba(255,255,255,0.3)'
+                    icon={() => (showPassword ? <EyeOff size={18} color={colors.textMuted} /> : <Eye size={18} color={colors.textMuted} />)}
+                    color={colors.textMuted}
                     onPress={() => setShowPassword((v) => !v)}
                   />
                 }
-                outlineColor={errors.password ? 'rgba(220,38,38,0.5)' : 'rgba(255,255,255,0.1)'}
-                activeOutlineColor={errors.password ? '#f87171' : colors.primary}
+                outlineColor={errors.password ? colors.errorBorder : colors.inputOutline}
+                activeOutlineColor={errors.password ? colors.errorText : colors.primary}
                 style={styles.input}
-                placeholderTextColor='rgba(255,255,255,0.2)'
-                theme={INPUT_THEME}
+                placeholderTextColor={colors.textFaint}
+                theme={inputTheme}
               />
               {errors.password ? <Text style={styles.fieldErr}>{errors.password}</Text> : null}
 
               <Pressable onPress={() => navigation.navigate('ForgotPasswordScreen')} style={{ alignSelf: 'flex-end', marginTop: 8, marginBottom: 4 }}>
-                <Text style={styles.forgotText}>Forgot Password?</Text>
+                <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
               </Pressable>
 
               <Pressable
                 onPress={handleLogin}
                 disabled={isLoading}
-                style={({ pressed }) => [styles.primaryBtn, pressed && { backgroundColor: 'rgba(34,197,94,0.2)' }, isLoading && { opacity: 0.5 }]}
+                style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.88 }, isLoading && { opacity: 0.5 }]}
               >
-                {isLoading ? <ActivityIndicator size='small' color={colors.primary} /> : <Text style={styles.primaryBtnText}>Log In</Text>}
+                {isLoading ? <ActivityIndicator size='small' color={colors.textOnPrimary} /> : <Text style={styles.primaryBtnText}>{t('auth.logIn')}</Text>}
               </Pressable>
 
               <XStack ai='center' gap='$3' my='$4'>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or continue with</Text>
+                <Text style={styles.dividerText}>{t('auth.orContinue')}</Text>
                 <View style={styles.dividerLine} />
               </XStack>
 
               <XStack gap='$3'>
-                <Pressable onPress={handleGoogle} style={({ pressed }) => [styles.socialBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.07)' }]}>
-                  <Text style={{ fontSize: 15 }}>🌐</Text>
-                  <Text style={styles.socialBtnText}>Google</Text>
+                <Pressable onPress={handleGoogle} style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.75 }]}>
+                  <Globe size={16} color={colors.textSecondary} />
+                  <Text style={styles.socialBtnText}>{t('auth.google')}</Text>
                 </Pressable>
 
-                <Pressable style={({ pressed }) => [styles.socialBtn, pressed && { backgroundColor: 'rgba(255,255,255,0.07)' }]}>
-                  <Text style={{ fontSize: 16 }}>⬡</Text>
-                  <Text style={styles.socialBtnText}>Face ID</Text>
+                <Pressable
+                  onPress={canUseBiometrics ? handleBiometricLogin : undefined}
+                  disabled={!canUseBiometrics || isLoading}
+                  style={({ pressed }) => [
+                    styles.socialBtn,
+                    pressed && canUseBiometrics && { opacity: 0.75 },
+                    !canUseBiometrics && { opacity: 0.4 },
+                  ]}
+                >
+                  <BiometricIcon size={16} color={colors.textSecondary} />
+                  <Text style={styles.socialBtnText}>{biometryLabel}</Text>
                 </Pressable>
               </XStack>
 
               <XStack ai='center' jc='center' gap='$2' mt='$4'>
-                <Text style={styles.footerText}>Don't have an account?</Text>
+                <Text style={styles.footerText}>{t('auth.noAccount')}</Text>
                 <Pressable onPress={() => navigation.navigate('SignupScreen')}>
-                  <Text style={styles.footerLink}>Sign Up</Text>
+                  <Text style={styles.footerLink}>{t('auth.signUp')}</Text>
                 </Pressable>
               </XStack>
-            </View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
+      </View>
     </Screen>
   )
 }

@@ -1,10 +1,15 @@
+import { ChevronRight } from '@tamagui/lucide-icons-2'
+import React from 'react'
 import { Pressable } from 'react-native'
 import { Text, View, YStack } from 'tamagui'
 
-import { styles } from '../styles.module'
+import { useLanguage } from '../../../../../context/Language'
+import { useAppTheme } from '../../../../../context/Theme'
+import { useThemedStyles } from '../../../../../theme'
+import { createStyles } from '../styles.module'
 
 interface RowProps {
-  icon: string
+  icon: React.ReactNode
   title: string
   subtitle: string
   danger?: boolean
@@ -13,27 +18,34 @@ interface RowProps {
   noBorder?: boolean
 }
 
-const SettingRow: React.FC<RowProps> = ({ icon, title, subtitle, danger, badge, onPress, noBorder }) => (
-  <Pressable
-    onPress={onPress}
-    disabled={!onPress && !badge}
-    style={({ pressed }) => [styles.row, !noBorder && styles.rowBorder, pressed && onPress && { backgroundColor: 'rgba(255,255,255,0.03)' }]}
-  >
-    <View style={[styles.rowIcon, danger && styles.rowIconDanger]}>
-      <Text style={{ fontSize: 16 }}>{icon}</Text>
-    </View>
-    <YStack flex={1}>
-      <Text style={[styles.rowTitle, danger && { color: '#f87171' }]}>{title}</Text>
-      <Text style={styles.rowSub}>{subtitle}</Text>
-    </YStack>
-    {badge ? (
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>{badge}</Text>
-      </View>
-    ) : onPress ? (
-      <Text style={[styles.rowArrow, danger && { color: 'rgba(220,38,38,0.5)' }]}>›</Text>
-    ) : null}
-  </Pressable>
-)
+const SettingRow: React.FC<RowProps> = ({ icon, title, subtitle, danger, badge, onPress, noBorder }) => {
+  const styles = useThemedStyles(createStyles)
+  const { colors } = useAppTheme()
+  const { isRTL } = useLanguage()
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      style={({ pressed }) => [styles.row, !noBorder && styles.rowBorder, pressed && onPress && { opacity: 0.65 }]}
+    >
+      <View style={[styles.rowIcon, danger && styles.rowIconDanger]}>{icon}</View>
+      <YStack flex={1}>
+        <Text style={[styles.rowTitle, danger && { color: colors.errorText }]}>{title}</Text>
+        <Text style={styles.rowSub}>{subtitle}</Text>
+      </YStack>
+      {badge ? (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badge}</Text>
+        </View>
+      ) : null}
+      {onPress ? (
+        <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+          <ChevronRight size={18} color={danger ? colors.errorText : colors.textDisabled} />
+        </View>
+      ) : null}
+    </Pressable>
+  )
+}
 
 export default SettingRow

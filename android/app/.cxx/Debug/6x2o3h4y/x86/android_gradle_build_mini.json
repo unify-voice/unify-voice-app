@@ -1,8 +1,10 @@
 {
   "buildFiles": [
+    "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/@react-native-google-signin/google-signin/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/CMakeLists.txt",
+    "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-keychain/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-reanimated/android/build/generated/source/codegen/jni/CMakeLists.txt",
     "/Users/sulaiman/Documents/FYP/project/unify-voice-app/node_modules/react-native-safe-area-context/android/src/main/jni/CMakeLists.txt",
@@ -79,6 +81,11 @@
         "/Users/sulaiman/.gradle/caches/9.3.1/transforms/3020e1662a5c938d58df48f64836b9f2/transformed/react-android-0.85.0-debug/prefab/modules/reactnative/libs/android.x86/libreactnative.so"
       ]
     },
+    "react_codegen_RNKeychainSpec::@f9a2cb36ebca2de4baf9": {
+      "artifactName": "react_codegen_RNKeychainSpec",
+      "abi": "x86",
+      "runtimeFiles": []
+    },
     "react_codegen_rnsvg::@4f40eb209d0c0b4a3b65": {
       "artifactName": "react_codegen_rnsvg",
       "abi": "x86",
@@ -96,6 +103,11 @@
     },
     "react_codegen_RNGoogleSignInCGen::@337b7b353bd94a4215c0": {
       "artifactName": "react_codegen_RNGoogleSignInCGen",
+      "abi": "x86",
+      "runtimeFiles": []
+    },
+    "react_codegen_rnasyncstorage::@1596841e19ec5b9eeffe": {
+      "artifactName": "react_codegen_rnasyncstorage",
       "abi": "x86",
       "runtimeFiles": []
     }
